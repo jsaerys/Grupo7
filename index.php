@@ -3,7 +3,7 @@ require_once __DIR__ . '/controlador/AuthController.php';
 
 $authController = new AuthController();
 
-$page = $_GET['pag'] ?? 'login';
+$page = $_GET['page'] ?? 'login';
 
 switch ($page) {
     case 'login':

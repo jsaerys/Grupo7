@@ -15,15 +15,13 @@ if (!isset($_SESSION['usuario'])) {
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-    <div class="login-container" id="loginContainer" style="display: none;"></div>
-
-    <div id="mainPanel" class="main-panel">
+    <div class="main-panel">
         <header class="main-header">
             <h1>Portal de la Tienda de Mascotas</h1>
             <nav class="main-nav">
-                <button data-target="inicioSection" class="nav-button active-nav-button">Inicio</button>
-                <button data-target="agendarCitasSection" class="nav-button">Agendar Citas</button>
-                <button data-target="veterinariaSection" class="nav-button">Veterinaria</button>
+                <button onclick="mostrarSeccion('inicioSection')" class="nav-button active-nav-button">Inicio</button>
+                <button onclick="mostrarSeccion('agendarCitasSection')" class="nav-button">Agendar Citas</button>
+                <button onclick="mostrarSeccion('veterinariaSection')" class="nav-button">Veterinaria</button>
                 <a href="../index.php?page=logout" class="nav-button logout-button">Cerrar Sesión</a>
             </nav>
         </header>
@@ -56,38 +54,54 @@ if (!isset($_SESSION['usuario'])) {
                 </div>
             </section>
 
-            <section id="agendarCitasSection" class="panel-section">
+            <section id="agendarCitasSection" class="panel-section" style="display:none">
                 <h2>Agendar Citas</h2>
-                <form id="appointmentForm" class="styled-form">
-                    <h3>Registrar Nueva Cita</h3>
-                    <div class="input-group">
-                        <label for="petName">Nombre de la Mascota:</label>
-                        <input type="text" id="petName" name="petName" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="serviceType">Tipo de Servicio:</label>
-                        <select id="serviceType" name="serviceType" required>
-                            <option value="">Selecciona un servicio...</option>
-                            <option value="consulta">Consulta General</option>
-                            <option value="vacunacion">Vacunación</option>
-                            <option value="grooming">Peluquería</option>
-                            <option value="cirugia">Cirugía Menor</option>
-                            <option value="desparasitacion">Desparasitación</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="preferredDate">Fecha Preferida:</label>
-                        <input type="date" id="preferredDate" name="preferredDate" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="contactInfo">Tu Email de Contacto:</label>
-                        <input type="email" id="contactInfo" name="contactInfo" required>
-                    </div>
-                    <button type="submit" class="submit-button">Solicitar Cita</button>
-                </form>
+                <div class="intro-box">
+                    <p>
+                        Agenda fácilmente una cita para tu mascota. Servicios disponibles: Consulta, vacunación, grooming, cirugía, etc.
+                    </p>
+                </div>
+<form id="appointmentForm" class="styled-form" action="../controlador/guardar_cita.php" method="POST">
+    <div class="input-group">
+        <label for="mascota">Nombre de la Mascota:</label>
+        <select id="mascota" name="mascota_id" required>
+            <option value="">Selecciona tu mascota...</option>
+            <?php foreach ($mascotas as $mascota): ?>
+                <option value="<?= $mascota['id'] ?>"><?= htmlspecialchars($mascota['nombre']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label for="servicio">Tipo de Servicio:</label>
+        <select id="servicio" name="servicio" required>
+            <option value="">Selecciona un servicio...</option>
+            <option value="consulta">Consulta General</option>
+            <option value="vacunacion">Vacunación</option>
+            <option value="grooming">Peluquería</option>
+            <option value="cirugia">Cirugía Menor</option>
+            <option value="desparasitacion">Desparasitación</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label for="fecha">Fecha Preferida:</label>
+        <input type="date" id="fecha" name="fecha" required>
+    </div>
+
+    <div class="input-group">
+        <label for="hora">Hora Preferida:</label>
+        <input type="time" id="hora" name="hora" required>
+    </div>
+
+    <button type="submit" class="submit-button">Agendar Cita</button>
+</form>
+
+
+               
             </section>
 
-            <section id="veterinariaSection" class="panel-section">
+            <section id="veterinariaSection" class="panel-section" style="display:none">
                 <h2>Nuestra Veterinaria</h2>
                 <div class="carousel-container">
                     <div class="carousel-slide active-slide">
@@ -109,6 +123,17 @@ if (!isset($_SESSION['usuario'])) {
         </main>
     </div>
 
-    <script src="../public/script.js"></script>
+    <script>
+        function mostrarSeccion(id) {
+            document.querySelectorAll('.panel-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(id).style.display = 'block';
+
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('active-nav-button');
+            });
+        }
+    </script>
 </body>
 </html>

@@ -26,4 +26,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("Script de login cargado.");
 });
+// ...existing code...
+
+// --- Panel principal: navegación de secciones ---
+document.addEventListener('DOMContentLoaded', () => {
+    const navButtons = document.querySelectorAll('.nav-button[data-target]');
+    const sections = document.querySelectorAll('.panel-section');
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Quitar clase activa de todos los botones
+            navButtons.forEach(btn => btn.classList.remove('active-nav-button'));
+            this.classList.add('active-nav-button');
+
+            // Ocultar todas las secciones
+            sections.forEach(section => section.classList.remove('active-section'));
+            // Mostrar la sección correspondiente
+            const target = this.getAttribute('data-target');
+            document.getElementById(target).classList.add('active-section');
+        });
+    });
+});
 

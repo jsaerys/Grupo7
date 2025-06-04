@@ -1,69 +1,90 @@
 <?php
 require_once __DIR__ . '/../modelo/Usuario.php';
+require_once __DIR__ . '/../configuracion/config.php';
 
 class AuthController {
+    private $conexion;
 
-    public function login() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $usuario = new Usuario();
-            $auth = $usuario->validar($_POST['email'], $_POST['password']);
-
-            if ($auth) {
-                session_start();
-                $_SESSION['usuario'] = $auth;
-                
-                // Redirigir al panel principal (fuera de index.php)
-                header('Location: ../vista/panel_principal.php');
-                exit;
-            } else {
-                $error = "Credenciales inválidas";
-                require_once __DIR__ . '/../vista/login.php';
-            }
-        } else {
-            require_once __DIR__ . '/../vista/login.php';
-        }
+    public function __construct() {
+        $this->conexion = conectarDB();
     }
 
-    public function registro() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $nombre = trim($_POST['nombre']);
-            $email = trim($_POST['email']);
-            $password = $_POST['password'];
-            $confirmar = $_POST['confirmar_password'];
+    public function procesarLogin() {
+        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $password = $_POST['password'];
 
-            if ($password !== $confirmar) {
-                $error = "Las contraseñas no coinciden";
-                require_once __DIR__ . '/../vista/registro.php';
-                return;
+        if (!$email || !$password) {
+            $error = "Por favor, complete todos los campos";
+            include __DIR__ . '/../vista/login.php';
+            return;
+        }
+
+        $stmt = $this->conexion->prepare("SELECT id, nombre, password FROM usuarios WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        if ($usuario = $resultado->fetch_assoc()) {
+            if (password_verify($password, $usuario['password'])) {
+                $_SESSION['usuario_id'] = $usuario['id'];
+                $_SESSION['usuario_nombre'] = $usuario['nombre'];
+                redirect('/index.php?page=panel_principal');
             }
+        }
 
-            $usuario = new Usuario();
-            $existe = $usuario->existeEmail($email);
+        $error = "Credenciales incorrectas";
+        include __DIR__ . '/../vista/login.php';
+    }
 
-            if ($existe) {
-                $error = "El correo ya está registrado";
-                require_once __DIR__ . '/../vista/registro.php';
-                return;
-            }
+    public function procesarRegistro() {
+        $nombre = filter_input(INPUT_POST, 'nombre', FILTER_SANITIZE_STRING);
+        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $telefono = filter_input(INPUT_POST, 'telefono', FILTER_SANITIZE_STRING);
+        $password = $_POST['password'];
+        $confirm_password = $_POST['confirm_password'];
 
-            $registrado = $usuario->crear($nombre, $email, $password);
+        // Validaciones
+        if (!$nombre || !$email || !$telefono || !$password || !$confirm_password) {
+            $error = "Por favor, complete todos los campos";
+            include __DIR__ . '/../vista/registro.php';
+            return;
+        }
 
-            if ($registrado) {
-                header('Location: index.php?page=login');
-                exit;
-            } else {
-                $error = "Error al registrar usuario";
-                require_once __DIR__ . '/../vista/registro.php';
-            }
+        if ($password !== $confirm_password) {
+            $error = "Las contraseñas no coinciden";
+            include __DIR__ . '/../vista/registro.php';
+            return;
+        }
+
+        // Verificar si el email ya existe
+        $stmt = $this->conexion->prepare("SELECT id FROM usuarios WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            $error = "Este correo electrónico ya está registrado";
+            include __DIR__ . '/../vista/registro.php';
+            return;
+        }
+
+        // Hash de la contraseña
+        $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+        // Insertar nuevo usuario
+        $stmt = $this->conexion->prepare("INSERT INTO usuarios (nombre, email, telefono, password) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $nombre, $email, $telefono, $password_hash);
+
+        if ($stmt->execute()) {
+            $_SESSION['usuario_id'] = $stmt->insert_id;
+            $_SESSION['usuario_nombre'] = $nombre;
+            redirect('/index.php?page=panel_principal');
         } else {
-            require_once __DIR__ . '/../vista/registro.php';
+            $error = "Error al registrar el usuario";
+            include __DIR__ . '/../vista/registro.php';
         }
     }
 
     public function logout() {
-        session_start();
         session_destroy();
-        header('Location: index.php?page=login');
-        exit;
+        redirect('/index.php?page=login');
     }
 }

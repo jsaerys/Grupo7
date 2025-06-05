@@ -8,27 +8,29 @@ document.addEventListener('DOMContentLoaded', function() {
 async function handleLogin(e) {
     e.preventDefault();
 
-    const username = e.target.username.value.trim();
+    const email = e.target.email.value.trim();
     const password = e.target.password.value;
 
     // Validar campos vacíos
-    if (!username || !password) {
+    if (!email || !password) {
         await Swal.fire({
             icon: 'error',
             title: 'Campos incompletos',
-            text: 'Por favor, introduce tu usuario y contraseña.',
+            text: 'Por favor, complete todos los campos.',
             confirmButtonColor: '#ff934f'
         });
         return;
     }
 
     try {
-        const response = await fetch(BASE_URL + '/index.php?page=auth&action=login', {
+        const formData = new FormData();
+        formData.append('action', 'login');
+        formData.append('email', email);
+        formData.append('password', password);
+
+        const response = await fetch(loginForm.action, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+            body: formData
         });
 
         const data = await response.json();
@@ -36,16 +38,16 @@ async function handleLogin(e) {
         if (data.success) {
             await Swal.fire({
                 icon: 'success',
-                title: '¡Bienvenido a Guau!',
-                text: `Hola, ${username} 🐶`,
+                title: '¡Bienvenido!',
+                text: 'Inicio de sesión exitoso',
                 confirmButtonColor: '#ff934f'
             });
-            window.location.href = BASE_URL + '/index.php?page=home';
+            window.location.href = 'index.php';
         } else {
             await Swal.fire({
                 icon: 'error',
-                title: 'Usuario o contraseña incorrectos',
-                text: 'Por favor, revisa tus datos.',
+                title: 'Error',
+                text: data.error || 'Error al iniciar sesión',
                 confirmButtonColor: '#ff934f'
             });
         }
@@ -54,7 +56,7 @@ async function handleLogin(e) {
         await Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Hubo un problema al intentar iniciar sesión.',
+            text: 'Hubo un problema al procesar la solicitud',
             confirmButtonColor: '#ff934f'
         });
     }

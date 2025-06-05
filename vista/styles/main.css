@@ -15,6 +15,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin: 2rem auto;
 }
 
 .logo {
@@ -40,7 +41,9 @@ label {
   margin-bottom: 0.3rem;
 }
 
-input[type="text"], input[type="password"] {
+input[type="text"], 
+input[type="password"],
+input[type="email"] {
   padding: 0.8rem;
   border-radius: 0.6rem;
   border: 1px solid #b7aea2;
@@ -48,7 +51,9 @@ input[type="text"], input[type="password"] {
   outline: none;
 }
 
-input[type="text"]:focus, input[type="password"]:focus {
+input[type="text"]:focus, 
+input[type="password"]:focus,
+input[type="email"]:focus {
   border-color: #7db6d8;
 }
 
@@ -104,6 +109,7 @@ button[type="submit"]:hover {
   letter-spacing: 2px;
   text-shadow: 1px 1px 0px #a68962;
   font-family: 'Segoe Print', 'Comic Sans MS', cursive, sans-serif;
+  margin: 0;
 }
 
 .navbar ul {
@@ -128,7 +134,9 @@ button[type="submit"]:hover {
   border-radius: 8px;
 }
 
-.navbar a.active, .navbar a:hover, .navbar .login-btn:hover {
+.navbar a.active, 
+.navbar a:hover, 
+.navbar .login-btn:hover {
   background: #ff934f;
   color: #fff;
 }
@@ -229,6 +237,7 @@ button[type="submit"]:hover {
   gap: 2.2rem;
   flex-wrap: wrap;
   justify-content: center;
+  padding: 0 1rem;
 }
 
 .feature {

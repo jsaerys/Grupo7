@@ -1,15 +1,26 @@
 RewriteEngine On
-RewriteBase /Grupo7/
+RewriteBase /proyectos/colaborativo/Grupo7/
 
-# Si el archivo o directorio existe, úsalo directamente
+# Si el archivo o directorio no existe, redirige a index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
 
-# Redirigir todas las solicitudes al index.php
-RewriteRule ^(.*)$ index.php [QSA,L]
+# Prevenir listado de directorios
+Options -Indexes
 
-# Permitir acceso a archivos estáticos
+# Manejo de errores
+ErrorDocument 404 /proyectos/colaborativo/Grupo7/views/404.php
+ErrorDocument 403 /proyectos/colaborativo/Grupo7/views/403.php
+
+# Seguridad adicional
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Permitir acceso a archivos específicos
 <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico)$">
-    Order Allow,Deny
+    Order allow,deny
     Allow from all
 </FilesMatch> 

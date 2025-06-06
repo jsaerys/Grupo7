@@ -11,7 +11,7 @@ if (isset($_SESSION['user'])) {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Iniciar Sesión - Guau</title>
+    <title>Registrarse - Guau</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/main.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -24,25 +24,33 @@ if (isset($_SESSION['user'])) {
             <li><a href="productos.php">Productos</a></li>
             <li><a href="nosotros.php">Sobre Nosotros</a></li>
             <li><a href="contacto.php">Contacto</a></li>
-            <li><a href="login.php" class="login-btn active">Ingresar</a></li>
+            <li><a href="login.php" class="login-btn">Ingresar</a></li>
         </ul>
     </nav>
 
     <div class="main-content-wrapper">
         <div class="login-container">
             <span class="logo">🐾 Guau</span>
-            <form id="loginForm" method="POST" action="../controlador/procesar_usuario.php">
-                <input type="hidden" name="action" value="login">
+            <form id="registerForm" method="POST" action="../controlador/procesar_usuario.php">
+                <input type="hidden" name="action" value="register">
+                <div>
+                    <label for="nombre">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" required autocomplete="name">
+                </div>
                 <div>
                     <label for="email">Correo Electrónico</label>
                     <input type="email" id="email" name="email" required autocomplete="email">
                 </div>
                 <div>
                     <label for="password">Contraseña</label>
-                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                    <input type="password" id="password" name="password" required autocomplete="new-password">
                 </div>
-                <button type="submit">Iniciar Sesión</button>
-                <p class="info">¿No tienes una cuenta? <a href="registro.php">Regístrate aquí</a></p>
+                <div>
+                    <label for="telefono">Teléfono</label>
+                    <input type="text" id="telefono" name="telefono" required autocomplete="tel">
+                </div>
+                <button type="submit">Registrarse</button>
+                <p class="info">¿Ya tienes una cuenta? <a href="login.php">Inicia sesión aquí</a></p>
             </form>
         </div>
     </div>
@@ -52,7 +60,7 @@ if (isset($_SESSION['user'])) {
     </footer>
 
     <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const formData = new FormData(this);
@@ -66,18 +74,18 @@ if (isset($_SESSION['user'])) {
             if (data.success) {
                 Swal.fire({
                     icon: 'success',
-                    title: '¡Bienvenido!',
-                    text: 'Iniciando sesión...',
-                    timer: 1500,
+                    title: '¡Registro Exitoso!',
+                    text: 'Ahora puedes iniciar sesión.',
+                    timer: 2000,
                     showConfirmButton: false
                 }).then(() => {
-                    window.location.href = 'index.php';
+                    window.location.href = 'login.php';
                 });
             } else {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: data.message || 'Error al iniciar sesión'
+                    text: data.message || 'Error al registrar usuario'
                 });
             }
         })
@@ -91,4 +99,4 @@ if (isset($_SESSION['user'])) {
     });
     </script>
 </body>
-</html> 
+</html>

@@ -27,6 +27,7 @@ $conn = $conexion->getConexion();
     <div id="dashboard-container">
         <nav id="sidebar">
             <div class="sidebar-header">
+                <p class="text-center text-muted mt-5">&copy; 2025 Guau - Panel Administrativo</p>
                 <h3><i class="bi bi-speedometer2 me-2"></i>Panel Admin</h3>
                 <div class="mt-2">
                     <a href="../../controlador/usuariocontroller.php?action=logout" class="btn btn-danger btn-sm w-100"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a>
@@ -53,11 +54,7 @@ $conn = $conexion->getConexion();
                         <i class="bi bi-calendar-check me-2"></i> Citas
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="?seccion=productos" class="nav-link <?php echo $seccion === 'productos' ? 'active' : 'text-white'; ?>">
-                        <i class="bi bi-box-seam me-2"></i> Productos
-                    </a>
-                </li>
+
             </ul>
         </nav>
 
@@ -143,45 +140,7 @@ $conn = $conexion->getConexion();
                     </table>
                 </div>
             </div>
-            <?php elseif ($seccion === 'productos'): ?>
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Gestión de Productos</h2>
-                    <button class="btn btn-primary" id="add-new-btn"><i class="bi bi-plus-circle me-2"></i>Añadir Nuevo Producto</button>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Precio</th>
-                                <th>Stock</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $query = "SELECT id, nombre, precio, stock FROM productos";
-                            $stmt = $conn->prepare($query);
-                            $stmt->execute();
-                            while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
-                            ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($row['id']); ?></td>
-                                <td><?php echo htmlspecialchars($row['nombre']); ?></td>
-                                <td>$<?php echo htmlspecialchars($row['precio']); ?></td>
-                                <td><?php echo htmlspecialchars($row['stock']); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
             <?php endif; ?>
         </div>
         </div>

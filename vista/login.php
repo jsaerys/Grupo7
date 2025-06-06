@@ -1,5 +1,15 @@
 <?php
 session_start();
+
+// Si ya hay una sesión activa, redirigir según el rol
+if (isset($_SESSION['user'])) {
+    if ($_SESSION['user']['rol'] === 'admin') {
+        header('Location: admin/dashboard.php');
+    } else {
+        header('Location: index.php');
+    }
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">

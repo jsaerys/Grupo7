@@ -107,8 +107,17 @@ class UsuarioController {
         // Destruir todas las variables de sesión
         $_SESSION = array();
         
+        // Si hay una cookie de sesión, destruirla también
+        if (isset($_COOKIE[session_name()])) {
+            setcookie(session_name(), '', time()-3600, '/');
+        }
+        
         // Destruir la sesión
         session_destroy();
+        
+        // Iniciar una nueva sesión limpia para mensajes
+        session_start();
+        $_SESSION['message'] = 'Sesión cerrada correctamente.';
         
         // Redirigir al login
         header('Location: ../vista/login.php');
@@ -137,9 +146,6 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
                 'password' => $_POST['password'] ?? ''
             ];
             $controller->registrar($datos);
-            break;
-        case 'logout':
-            $controller->cerrarSesion();
             break;
         // Puedes añadir más casos para otras acciones como actualizar, cambiarPassword, etc.
         default:

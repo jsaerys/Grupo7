@@ -5,42 +5,46 @@
     <title>Pet Shop Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="../styles/main.css">
 </head>
 <body>
-    <div class="d-flex" id="wrapper">
-        <!-- Sidebar -->
-        <div class="bg-dark border-right" id="sidebar-wrapper">
-            <div class="sidebar-heading"><i class="bi bi-house-door-fill me-2"></i>Pet Shop Admin</div>
-            <div class="list-group list-group-flush" id="sidebar">
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white active" data-target="mascotas">
-                    <i class="bi bi-hearts me-2"></i> Mascotas
-                </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-target="clientes">
-                    <i class="bi bi-people-fill me-2"></i> Clientes
-                </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-target="ventas">
-                    <i class="bi bi-cash-coin me-2"></i> Ventas
-                </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-target="citas">
-                    <i class="bi bi-calendar-check me-2"></i> Citas
-                </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-target="productos">
-                    <i class="bi bi-box-seam me-2"></i> Productos
-                </a>
+    <div id="dashboard-container">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="bi bi-speedometer2 me-2"></i>Pet Shop Admin</h3>
             </div>
-        </div>
-        <!-- /#sidebar-wrapper -->
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-target="mascotas">
+                        <i class="bi bi-hearts me-2"></i> Mascotas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link text-white" data-target="clientes">
+                        <i class="bi bi-people-fill me-2"></i> Clientes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link text-white" data-target="ventas">
+                        <i class="bi bi-cash-coin me-2"></i> Ventas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link text-white" data-target="citas">
+                        <i class="bi bi-calendar-check me-2"></i> Citas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link text-white" data-target="productos">
+                        <i class="bi bi-box-seam me-2"></i> Productos
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
-        <!-- Page Content -->
-        <div id="page-content-wrapper">
-            <div class="container-fluid">
-                <div id="content">
-                    <!-- Content for each section will be dynamically generated here -->
-                </div>
-            </div>
+        <div id="content">
+            <!-- Content for each section will be dynamically generated here -->
         </div>
-        <!-- /#page-content-wrapper -->
     </div>
 
     <!-- Modal for Add/Edit -->

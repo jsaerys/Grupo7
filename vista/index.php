@@ -41,7 +41,6 @@ $page = 'home';
                 <li><a href="login.php" class="login-btn">Ingresar</a></li>
             <?php endif; ?>
         </ul>
-    </nav>
 
     <header class="hero">
         <div class="hero-content">

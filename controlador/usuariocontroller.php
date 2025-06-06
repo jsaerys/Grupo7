@@ -23,7 +23,7 @@ class UsuarioController {
                 'id' => $usuario['id'],
                 'nombre' => $usuario['nombre'],
                 'email' => $usuario['email'],
-                'rol' => $usuario['rol']
+                'tipo' => $usuario['rol'] // Guardamos el rol como tipo para consistencia
             ];
             $is_admin = (strtolower(trim($usuario['rol'])) === 'admin');
             $_SESSION['is_admin'] = $is_admin; // Establecer explícitamente is_admin en la sesión
@@ -37,7 +37,7 @@ class UsuarioController {
                 header('Location: ../vista/admin/dashboard.php');
                 exit();
             } else {
-                header('Location: ../vista/index.php');
+                header('Location: ../vista/cliente/panel.php');
                 exit();
             }
             exit();

@@ -1,25 +1,26 @@
 import Swal from "sweetalert2";
 
-// Simulación simple de inicio de sesión
 document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+    const registroForm = document.getElementById('registroForm');
+    if (registroForm) {
+        registroForm.addEventListener('submit', handleRegistro);
     }
 });
 
-async function handleLogin(e) {
+async function handleRegistro(e) {
     e.preventDefault();
 
+    const nombre = e.target.nombre.value.trim();
     const email = e.target.email.value.trim();
+    const telefono = e.target.telefono.value.trim();
     const password = e.target.password.value;
 
     // Validar campos vacíos
-    if (!email || !password) {
+    if (!nombre || !email || !password) {
         await Swal.fire({
             icon: 'error',
             title: 'Campos incompletos',
-            text: 'Por favor, introduce tu correo y contraseña.',
+            text: 'Por favor, complete todos los campos obligatorios (Nombre, Correo, Contraseña).',
             confirmButtonColor: '#ff934f'
         });
         return;
@@ -27,11 +28,13 @@ async function handleLogin(e) {
 
     try {
         const formData = new FormData();
-        formData.append('action', 'login');
+        formData.append('action', 'register');
+        formData.append('nombre', nombre);
         formData.append('email', email);
+        formData.append('telefono', telefono);
         formData.append('password', password);
 
-        const response = await fetch(loginForm.action, {
+        const response = await fetch(registroForm.action, {
             method: 'POST',
             body: formData
         });
@@ -41,21 +44,16 @@ async function handleLogin(e) {
         if (data.success) {
             await Swal.fire({
                 icon: 'success',
-                title: '¡Bienvenido!',
-                text: 'Inicio de sesión exitoso',
+                title: '¡Registro Exitoso!',
+                text: 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.',
                 confirmButtonColor: '#ff934f'
             });
-            // Redireccionar según el rol del usuario
-            if (data.is_admin) {
-                window.location.href = 'admin/dashboard.php';
-            } else {
-                window.location.href = 'index.php'; // O la página de inicio para usuarios normales
-            }
+            window.location.href = 'login.php'; // Redirigir al login
         } else {
             await Swal.fire({
                 icon: 'error',
-                title: 'Error al iniciar sesión',
-                text: data.error || 'Correo o contraseña incorrectos. Por favor, revisa tus datos.',
+                title: 'Error en el Registro',
+                text: data.error || 'Hubo un problema al registrar tu cuenta.',
                 confirmButtonColor: '#ff934f'
             });
         }
@@ -64,7 +62,7 @@ async function handleLogin(e) {
         await Swal.fire({
             icon: 'error',
             title: 'Error de Conexión',
-            text: 'Hubo un problema al conectar con el servidor. Inténtalo de nuevo más tarde.',
+            text: 'No se pudo conectar con el servidor. Inténtalo de nuevo más tarde.',
             confirmButtonColor: '#ff934f'
         });
     }

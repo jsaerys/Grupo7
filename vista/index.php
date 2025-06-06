@@ -11,7 +11,7 @@ $productos = array_slice($productoModelo->obtenerTodos(), 0, 3);
 // Definir la página actual para el menú
 $page = 'home';
 ?>
-.
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -20,6 +20,7 @@ $page = 'home';
     <title>Guau - Tienda de Mascotas</title>
     <link rel="stylesheet" href="styles/main.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/login.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -34,7 +35,7 @@ $page = 'home';
                     <li><a href="admin/index.php">Admin</a></li>
                 <?php endif; ?>
                 <li>
-                    <a href="#" onclick="cerrarSesion()" class="login-btn">Cerrar Sesión</a>
+                    <a href="../controlador/logout.php" class="login-btn">Cerrar Sesión</a>
                 </li>
             <?php else: ?>
                 <li><a href="login.php" class="login-btn">Ingresar</a></li>
@@ -101,7 +102,7 @@ $page = 'home';
     </main>
 
     <footer class="footer">
-        <span>&copy; 2024 Guau - Tienda de Mascotas. Todos los derechos reservados.</span>
+        <span>&copy; 2025 Guau - Tienda de Mascotas. Todos los derechos reservados.</span>
     </footer>
 
     <script>

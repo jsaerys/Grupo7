@@ -98,7 +98,7 @@ $page = 'contacto';
         <a href="index.php" class="logo">🐾 Guau</a>
         <ul>
             <li><a href="index.php">Inicio</a></li>
-            <li><a href="productos.php">Productos</a></li>
+
             <li><a href="nosotros.php">Sobre Nosotros</a></li>
             <li><a href="contacto.php" class="active">Contacto</a></li>
             <?php if (isset($_SESSION['user'])): ?>
@@ -164,7 +164,7 @@ $page = 'contacto';
     </div>
 
     <footer class="footer">
-        <span>&copy; 2024 Guau - Tienda de Mascotas. Todos los derechos reservados.</span>
+        <span>&copy; 2025 Guau - Tienda de Mascotas. Todos los derechos reservados.</span>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

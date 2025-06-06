@@ -28,14 +28,17 @@ class Usuario extends Conexion {
     public function registrar($datos) {
         $passwordHash = password_hash($datos['password'], PASSWORD_DEFAULT);
         
+        $rol = $datos['rol'] ?? 'cliente'; // Default to 'cliente' if not provided
+        
         $query = "INSERT INTO usuarios (nombre, email, telefono, password, rol) 
-                 VALUES (?, ?, ?, ?, 'cliente')";
+                 VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->conexion->prepare($query);
         return $stmt->execute([
             $datos['nombre'],
             $datos['email'],
             $datos['telefono'],
-            $passwordHash
+            $passwordHash,
+            $rol
         ]);
     }
 

@@ -28,21 +28,23 @@ if (isset($_SESSION['user'])) {
         </ul>
     </nav>
 
-    <div class="login-container">
-        <span class="logo">🐾 Guau</span>
-        <form id="loginForm" method="POST" action="../controlador/procesar_usuario.php">
-            <input type="hidden" name="action" value="login">
-            <div>
-                <label for="email">Correo Electrónico</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div>
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Iniciar Sesión</button>
-            <p class="info">¿No tienes una cuenta? <a href="registro.php">Regístrate aquí</a></p>
-        </form>
+    <div class="main-content-wrapper">
+        <div class="login-container">
+            <span class="logo">🐾 Guau</span>
+            <form id="loginForm" method="POST" action="../controlador/procesar_usuario.php">
+                <input type="hidden" name="action" value="login">
+                <div>
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div>
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Iniciar Sesión</button>
+                <p class="info">¿No tienes una cuenta? <a href="registro.php">Regístrate aquí</a></p>
+            </form>
+        </div>
     </div>
 
     <footer class="footer">

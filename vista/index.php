@@ -26,7 +26,7 @@ $page = 'home';
         <span class="logo">🐾 Guau</span>
         <ul>
             <li><a href="index.php" class="active">Inicio</a></li>
-            <li><a href="productos.php">Productos</a></li>
+            
             <li><a href="nosotros.php">Sobre Nosotros</a></li>
             <li><a href="contacto.php">Contacto</a></li>
             <?php if (isset($_SESSION['user'])): ?>

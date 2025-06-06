@@ -104,8 +104,13 @@ class UsuarioController {
     }
 
     public function cerrarSesion() {
+        // Destruir todas las variables de sesión
+        $_SESSION = array();
+        
+        // Destruir la sesión
         session_destroy();
-        $_SESSION['message'] = 'Sesión cerrada correctamente.';
+        
+        // Redirigir al login
         header('Location: ../vista/login.php');
         exit();
     }
@@ -113,12 +118,16 @@ class UsuarioController {
 
 $controller = new UsuarioController();
 
-if (isset($_POST['action'])) {
-    switch ($_POST['action']) {
+if (isset($_POST['action']) || isset($_GET['action'])) {
+    $action = isset($_POST['action']) ? $_POST['action'] : $_GET['action'];
+    switch ($action) {
         case 'login':
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
             $controller->login($email, $password);
+            break;
+        case 'logout':
+            $controller->cerrarSesion();
             break;
         case 'register':
             $datos = [

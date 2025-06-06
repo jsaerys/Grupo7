@@ -28,7 +28,9 @@ $conn = $conexion->getConexion();
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3><i class="bi bi-speedometer2 me-2"></i>Panel Admin</h3>
-                <a href="../index.php" class="btn btn-outline-light btn-sm mt-2">Volver al inicio</a>
+                <div class="mt-2">
+                    <a href="../../controlador/usuariocontroller.php?action=logout" class="btn btn-danger btn-sm w-100"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a>
+                </div>
             </div>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">

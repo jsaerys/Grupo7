@@ -14,7 +14,7 @@ class Mascota {
 
     public function __construct() {
         $database = new Conexion();
-        $this->conn = $database->getConnection();
+        $this->conn = $database->getConexion();
     }
 
     public function crear() {

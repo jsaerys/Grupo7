@@ -4,14 +4,22 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
     header('Location: ../login.php');
     exit;
 }
+
+// Determinar qué sección mostrar
+$seccion = isset($_GET['seccion']) ? $_GET['seccion'] : 'mascotas';
+
+// Incluir la conexión a la base de datos
+require_once '../../modelo/conexion.php';
+$conexion = new Conexion();
+$conn = $conexion->getConexion();
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pet Shop Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <title>Panel Administrativo - Guau</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="styleDashboard.css">
 </head>
@@ -24,27 +32,27 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
             </div>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="#" class="nav-link active" data-target="mascotas">
+                    <a href="?seccion=mascotas" class="nav-link <?php echo $seccion === 'mascotas' ? 'active' : 'text-white'; ?>">
                         <i class="bi bi-hearts me-2"></i> Mascotas
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white" data-target="clientes">
+                    <a href="?seccion=clientes" class="nav-link <?php echo $seccion === 'clientes' ? 'active' : 'text-white'; ?>">
                         <i class="bi bi-people-fill me-2"></i> Clientes
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white" data-target="ventas">
+                    <a href="?seccion=ventas" class="nav-link <?php echo $seccion === 'ventas' ? 'active' : 'text-white'; ?>">
                         <i class="bi bi-cash-coin me-2"></i> Ventas
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white" data-target="citas">
+                    <a href="?seccion=citas" class="nav-link <?php echo $seccion === 'citas' ? 'active' : 'text-white'; ?>">
                         <i class="bi bi-calendar-check me-2"></i> Citas
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link text-white" data-target="productos">
+                    <a href="?seccion=productos" class="nav-link <?php echo $seccion === 'productos' ? 'active' : 'text-white'; ?>">
                         <i class="bi bi-box-seam me-2"></i> Productos
                     </a>
                 </li>
@@ -52,7 +60,128 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
         </nav>
 
         <div id="content">
-            <!-- Content for each section will be dynamically generated here -->
+            <?php if ($seccion === 'mascotas'): ?>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Gestión de Mascotas</h2>
+                    <button class="btn btn-primary" id="add-new-btn"><i class="bi bi-plus-circle me-2"></i>Añadir Nueva Mascota</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Especie</th>
+                                <th>Raza</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $query = "SELECT id, nombre, especie, raza FROM mascotas";
+                            $stmt = $conn->prepare($query);
+                            $stmt->execute();
+                            while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['id']); ?></td>
+                                <td><?php echo htmlspecialchars($row['nombre']); ?></td>
+                                <td><?php echo htmlspecialchars($row['especie']); ?></td>
+                                <td><?php echo htmlspecialchars($row['raza']); ?></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php elseif ($seccion === 'clientes'): ?>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Gestión de Clientes</h2>
+                    <button class="btn btn-primary" id="add-new-btn"><i class="bi bi-plus-circle me-2"></i>Añadir Nuevo Cliente</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            require_once '../../modelo/usuario.php';
+                            $usuarioModel = new Usuario();
+                            $query = "SELECT id, nombre, email, telefono FROM usuarios WHERE rol = 'cliente' AND activo = 1";
+                            
+                            $stmt = $conn->prepare($query);
+                            $stmt->execute();
+                            while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['id']); ?></td>
+                                <td><?php echo htmlspecialchars($row['nombre']); ?></td>
+                                <td><?php echo htmlspecialchars($row['email']); ?></td>
+                                <td><?php echo htmlspecialchars($row['telefono']); ?></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php elseif ($seccion === 'productos'): ?>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Gestión de Productos</h2>
+                    <button class="btn btn-primary" id="add-new-btn"><i class="bi bi-plus-circle me-2"></i>Añadir Nuevo Producto</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $query = "SELECT id, nombre, precio, stock FROM productos";
+                            $stmt = $conn->prepare($query);
+                            $stmt->execute();
+                            while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['id']); ?></td>
+                                <td><?php echo htmlspecialchars($row['nombre']); ?></td>
+                                <td>$<?php echo htmlspecialchars($row['precio']); ?></td>
+                                <td><?php echo htmlspecialchars($row['stock']); ?></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="<?php echo $row['id']; ?>"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
         </div>
     </div>
 
@@ -77,7 +206,6 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

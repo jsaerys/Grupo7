@@ -119,8 +119,8 @@ class UsuarioController {
         session_start();
         $_SESSION['message'] = 'Sesión cerrada correctamente.';
         
-        // Redirigir al login
-        header('Location: ../vista/login.php');
+        // Redirigir al index
+        header('Location: ../vista/index.php');
         exit();
     }
 }

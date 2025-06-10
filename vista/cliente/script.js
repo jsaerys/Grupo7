@@ -82,20 +82,42 @@ document.getElementById('cancel-add-appointment').addEventListener('click', () =
     sounds.cancel.play();
 });
 
-// Cargar mascotas en el select del formulario de citas
-async function loadPetSelect() {
+// Función para cargar las mascotas del usuario
+async function cargarMascotas() {
     try {
-        const response = await fetch('../../controlador/mascotacontroller.php?action=listarPorUsuario&usuario_id=' + userId);
+        const response = await fetch('../../controlador/mascotacontroller.php?action=listarPorUsuario');
+        if (!response.ok) {
+            throw new Error('Error al cargar las mascotas');
+        }
         const data = await response.json();
         
-        const select = document.getElementById('mascota-select');
-        select.innerHTML = '<option value="">Seleccione una mascota</option>' +
-            data.map(pet => `<option value="${pet.id}">${pet.nombre}</option>`).join('');
+        if (!data.success) {
+            throw new Error(data.message || 'Error al cargar las mascotas');
+        }
+
+        const selectMascota = document.getElementById('mascota-select');
+        selectMascota.innerHTML = '<option value="" disabled selected>Seleccione una mascota</option>';
+        
+        data.mascotas.forEach(mascota => {
+            const option = document.createElement('option');
+            option.value = mascota.id;
+            option.textContent = `${mascota.nombre} (${mascota.especie} - ${mascota.raza})`;
+            selectMascota.appendChild(option);
+        });
     } catch (error) {
-        console.error('Error al cargar mascotas:', error);
-        alert('Error al cargar las mascotas');
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudieron cargar las mascotas'
+        });
     }
 }
+
+// Evento para cuando se abre el modal de citas
+document.getElementById('nuevaCitaBtn').addEventListener('click', function() {
+    cargarMascotas(); // Cargar las mascotas cuando se abre el modal
+});
 
 // Función para agendar cita
 async function agendarCita() {

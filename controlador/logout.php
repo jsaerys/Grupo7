@@ -12,7 +12,7 @@ if (isset($_COOKIE[session_name()])) {
 // Destruir la sesión
 session_destroy();
 
-// Redirigir al usuario a la página de login
-header('Location: ../vista/login.php');
+// Redirigir al usuario a la página de inicio
+header('Location: ../vista/index.php');
 exit;
 ?>

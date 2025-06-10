@@ -17,25 +17,33 @@ class Mascota {
         $this->conn = $database->getConexion();
     }
 
-    public function crear($usuario_id, $nombre, $tipo, $raza) {
-        $query = "INSERT INTO " . $this->table_name . " SET nombre=:nombre, especie=:tipo, raza=:raza, usuario_id=:usuario_id";
-        $stmt = $this->conn->prepare($query);
+    public function crear($usuario_id, $nombre, $especie, $raza) {
+        try {
+            $query = "INSERT INTO " . $this->table_name . " 
+                    (usuario_id, nombre, especie, raza) 
+                    VALUES (:usuario_id, :nombre, :especie, :raza)";
+            
+            $stmt = $this->conn->prepare($query);
 
-        // Sanitizar inputs
-        $nombre = htmlspecialchars(strip_tags($nombre));
-        $tipo = htmlspecialchars(strip_tags($tipo));
-        $raza = htmlspecialchars(strip_tags($raza));
-        $usuario_id = htmlspecialchars(strip_tags($usuario_id));
+            // Sanitizar inputs
+            $usuario_id = htmlspecialchars(strip_tags($usuario_id));
+            $nombre = htmlspecialchars(strip_tags($nombre));
+            $especie = htmlspecialchars(strip_tags($especie));
+            $raza = htmlspecialchars(strip_tags($raza));
 
-        $stmt->bindParam(":nombre", $nombre);
-        $stmt->bindParam(":tipo", $tipo);
-        $stmt->bindParam(":raza", $raza);
-        $stmt->bindParam(":usuario_id", $usuario_id);
+            // Vincular parámetros
+            $stmt->bindParam(":usuario_id", $usuario_id);
+            $stmt->bindParam(":nombre", $nombre);
+            $stmt->bindParam(":especie", $especie);
+            $stmt->bindParam(":raza", $raza);
 
-        if ($stmt->execute()) {
-            return $this->conn->lastInsertId();
+            if($stmt->execute()) {
+                return $this->conn->lastInsertId();
+            }
+            throw new Exception("Error al crear la mascota");
+        } catch(PDOException $e) {
+            throw new Exception("Error al crear la mascota: " . $e->getMessage());
         }
-        throw new Exception("Error al crear la mascota");
     }
 
     public function leer() {
@@ -73,24 +81,27 @@ class Mascota {
     }
 
     public function eliminar($id, $usuario_id) {
-        // Verificar que la mascota pertenezca al usuario
-        $query = "DELETE FROM " . $this->table_name . " WHERE id = :id AND usuario_id = :usuario_id";
-        $stmt = $this->conn->prepare($query);
+        try {
+            $query = "DELETE FROM " . $this->table_name . " 
+                     WHERE id = :id AND usuario_id = :usuario_id";
+            
+            $stmt = $this->conn->prepare($query);
 
-        // Sanitizar inputs
-        $id = htmlspecialchars(strip_tags($id));
-        $usuario_id = htmlspecialchars(strip_tags($usuario_id));
+            // Sanitizar inputs
+            $id = htmlspecialchars(strip_tags($id));
+            $usuario_id = htmlspecialchars(strip_tags($usuario_id));
 
-        $stmt->bindParam(":id", $id);
-        $stmt->bindParam(":usuario_id", $usuario_id);
+            // Vincular parámetros
+            $stmt->bindParam(":id", $id);
+            $stmt->bindParam(":usuario_id", $usuario_id);
 
-        if ($stmt->execute()) {
-            if ($stmt->rowCount() > 0) {
+            if($stmt->execute()) {
                 return true;
             }
-            throw new Exception("No se encontró la mascota o no pertenece al usuario");
+            return false;
+        } catch(PDOException $e) {
+            throw new Exception("Error al eliminar la mascota: " . $e->getMessage());
         }
-        throw new Exception("Error al eliminar la mascota");
     }
 
     public function leerUno($id, $usuario_id) {
@@ -114,15 +125,20 @@ class Mascota {
     }
 
     public function listarPorUsuario($usuario_id) {
-        $query = "SELECT id, nombre, especie as tipo, raza FROM " . $this->table_name . " WHERE usuario_id = :usuario_id ORDER BY nombre ASC";
-        $stmt = $this->conn->prepare($query);
-        
-        // Sanitizar input
-        $usuario_id = htmlspecialchars(strip_tags($usuario_id));
-        $stmt->bindParam(":usuario_id", $usuario_id);
-        
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $query = "SELECT id, nombre, especie, raza 
+                     FROM " . $this->table_name . " 
+                     WHERE usuario_id = :usuario_id 
+                     ORDER BY nombre ASC";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":usuario_id", $usuario_id);
+            $stmt->execute();
+
+            return $stmt;
+        } catch(PDOException $e) {
+            throw new Exception("Error al listar mascotas: " . $e->getMessage());
+        }
     }
 }
 ?>

@@ -1,48 +1,109 @@
 <?php
-session_start();
-require_once '../modelo/mascota.php';
+// Configurar el tiempo de vida de la sesión (8 horas)
+ini_set('session.gc_maxlifetime', 28800);
+session_set_cookie_params(28800);
 
+session_start();
+
+// Verificar si el usuario está autenticado
 if (!isset($_SESSION['user'])) {
-    header('Location: ../vista/login.php');
-    exit;
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Sesión expirada']);
+        exit;
+    } else {
+        $_SESSION['error'] = 'Por favor inicie sesión para continuar.';
+        header('Location: /vista/login.php');
+        exit;
+    }
 }
+
+require_once __DIR__ . '/../modelo/mascota.php';
 
 $action = $_GET['action'] ?? '';
 $model = new Mascota();
 
 switch ($action) {
-    case 'create':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                $model->crear(
-                    $_SESSION['user']['id'],
-                    $_POST['nombre'],
-                    $_POST['tipo'],
-                    $_POST['raza']
-                );
-                $_SESSION['mensaje'] = 'Mascota agregada exitosamente';
-            } catch (Exception $e) {
-                $_SESSION['error'] = $e->getMessage();
+    case 'listarPorUsuario':
+        try {
+            $stmt = $model->listarPorUsuario($_SESSION['user']['id']);
+            $mascotas = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $mascotas[] = [
+                    'id' => $row['id'],
+                    'nombre' => $row['nombre'],
+                    'especie' => $row['especie'],
+                    'raza' => $row['raza']
+                ];
             }
+            echo json_encode(['success' => true, 'mascotas' => $mascotas]);
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
-        header('Location: ../vista/cliente/panel.php?tab=mascotas');
         break;
 
-    case 'delete':
-        if (isset($_GET['id'])) {
+    case 'crear':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
-                $model->eliminar($_GET['id'], $_SESSION['user']['id']);
-                $_SESSION['mensaje'] = 'Mascota eliminada exitosamente';
+                if (empty($_POST['nombre']) || empty($_POST['especie']) || empty($_POST['raza'])) {
+                    throw new Exception('Todos los campos son requeridos');
+                }
+
+                $id = $model->crear(
+                    $_SESSION['user']['id'],
+                    $_POST['nombre'],
+                    $_POST['especie'],
+                    $_POST['raza']
+                );
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Mascota agregada exitosamente',
+                    'mascota' => [
+                        'id' => $id,
+                        'nombre' => $_POST['nombre'],
+                        'especie' => $_POST['especie'],
+                        'raza' => $_POST['raza']
+                    ]
+                ]);
             } catch (Exception $e) {
-                $_SESSION['error'] = $e->getMessage();
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
             }
         }
-        header('Location: ../vista/cliente/panel.php?tab=mascotas');
+        break;
+
+    case 'eliminar':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
+            try {
+                $model->eliminar($_POST['id'], $_SESSION['user']['id']);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Mascota eliminada exitosamente'
+                ]);
+            } catch (Exception $e) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ID de mascota no proporcionado'
+            ]);
+        }
         break;
 
     default:
-        header('Location: ../vista/cliente/panel.php?tab=mascotas');
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Acción no encontrada']);
+        break;
 }
-
-exit;
 ?>

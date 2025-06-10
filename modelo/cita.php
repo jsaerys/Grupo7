@@ -6,36 +6,45 @@ class Cita {
     private $table_name = "citas";
 
     public $id;
-    public $id_mascota;
     public $fecha;
     public $hora;
-    public $motivo;
+    public $servicio;
+    public $mascota_id;
+    public $usuario_id;
     public $estado;
+    public $notas;
+    public $fecha_registro;
 
     public function __construct() {
         $database = new Conexion();
-        $this->conn = $database->getConnection();
+        $this->conn = $database->getConexion();
     }
 
     public function crear() {
         try {
             $query = "INSERT INTO " . $this->table_name . " 
-                    (id_mascota, fecha, motivo, estado) 
-                    VALUES (:id_mascota, :fecha, :motivo, :estado)";
+                    (fecha, hora, servicio, mascota_id, usuario_id, estado, notas) 
+                    VALUES (:fecha, :hora, :servicio, :mascota_id, :usuario_id, :estado, :notas)";
             
             $stmt = $this->conn->prepare($query);
 
-            // Sanitizar y validar datos
-            $this->id_mascota = htmlspecialchars(strip_tags($this->id_mascota));
+            // Sanitizar inputs
             $this->fecha = htmlspecialchars(strip_tags($this->fecha));
-            $this->motivo = htmlspecialchars(strip_tags($this->motivo));
-            $this->estado = htmlspecialchars(strip_tags($this->estado));
+            $this->hora = htmlspecialchars(strip_tags($this->hora));
+            $this->servicio = htmlspecialchars(strip_tags($this->servicio));
+            $this->mascota_id = htmlspecialchars(strip_tags($this->mascota_id));
+            $this->usuario_id = htmlspecialchars(strip_tags($this->usuario_id));
+            $this->estado = 'pendiente';
+            $this->notas = htmlspecialchars(strip_tags($this->notas ?? ''));
 
             // Vincular parámetros
-            $stmt->bindParam(":id_mascota", $this->id_mascota);
             $stmt->bindParam(":fecha", $this->fecha);
-            $stmt->bindParam(":motivo", $this->motivo);
+            $stmt->bindParam(":hora", $this->hora);
+            $stmt->bindParam(":servicio", $this->servicio);
+            $stmt->bindParam(":mascota_id", $this->mascota_id);
+            $stmt->bindParam(":usuario_id", $this->usuario_id);
             $stmt->bindParam(":estado", $this->estado);
+            $stmt->bindParam(":notas", $this->notas);
 
             if($stmt->execute()) {
                 return true;
@@ -50,23 +59,31 @@ class Cita {
         try {
             $query = "UPDATE " . $this->table_name . "
                     SET fecha = :fecha,
-                        motivo = :motivo,
-                        estado = :estado
-                    WHERE id = :id";
+                        hora = :hora,
+                        servicio = :servicio,
+                        estado = :estado,
+                        notas = :notas
+                    WHERE id = :id AND usuario_id = :usuario_id";
 
             $stmt = $this->conn->prepare($query);
 
             // Sanitizar datos
             $this->id = htmlspecialchars(strip_tags($this->id));
             $this->fecha = htmlspecialchars(strip_tags($this->fecha));
-            $this->motivo = htmlspecialchars(strip_tags($this->motivo));
+            $this->hora = htmlspecialchars(strip_tags($this->hora));
+            $this->servicio = htmlspecialchars(strip_tags($this->servicio));
             $this->estado = htmlspecialchars(strip_tags($this->estado));
+            $this->notas = htmlspecialchars(strip_tags($this->notas ?? ''));
+            $this->usuario_id = htmlspecialchars(strip_tags($this->usuario_id));
 
             // Vincular parámetros
             $stmt->bindParam(":id", $this->id);
             $stmt->bindParam(":fecha", $this->fecha);
-            $stmt->bindParam(":motivo", $this->motivo);
+            $stmt->bindParam(":hora", $this->hora);
+            $stmt->bindParam(":servicio", $this->servicio);
             $stmt->bindParam(":estado", $this->estado);
+            $stmt->bindParam(":notas", $this->notas);
+            $stmt->bindParam(":usuario_id", $this->usuario_id);
 
             if($stmt->execute()) {
                 return true;
@@ -77,16 +94,16 @@ class Cita {
         }
     }
 
-    public function listarPorMascota($id_mascota) {
+    public function listarPorMascota($mascota_id) {
         try {
             $query = "SELECT c.*, m.nombre as mascota_nombre 
                     FROM " . $this->table_name . " c
-                    INNER JOIN mascotas m ON c.id_mascota = m.id
-                    WHERE c.id_mascota = :id_mascota
-                    ORDER BY c.fecha DESC";
+                    INNER JOIN mascotas m ON c.mascota_id = m.id
+                    WHERE c.mascota_id = :mascota_id
+                    ORDER BY c.fecha DESC, c.hora DESC";
 
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(":id_mascota", $id_mascota);
+            $stmt->bindParam(":mascota_id", $mascota_id);
             $stmt->execute();
 
             return $stmt;
@@ -99,9 +116,9 @@ class Cita {
         try {
             $query = "SELECT c.*, m.nombre as mascota_nombre 
                     FROM " . $this->table_name . " c
-                    INNER JOIN mascotas m ON c.id_mascota = m.id
-                    WHERE m.usuario_id = :usuario_id
-                    ORDER BY c.fecha DESC";
+                    INNER JOIN mascotas m ON c.mascota_id = m.id
+                    WHERE c.usuario_id = :usuario_id
+                    ORDER BY c.fecha DESC, c.hora DESC";
 
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":usuario_id", $usuario_id);
@@ -113,24 +130,19 @@ class Cita {
         }
     }
 
-    public function leer() {
+    public function eliminar($id, $usuario_id) {
         try {
-            $query = "SELECT id, id_mascota, fecha, hora, motivo, estado FROM " . $this->table_name . " ORDER BY id DESC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
-            return $stmt;
-        } catch(PDOException $e) {
-            throw new Exception("Error al leer citas: " . $e->getMessage());
-        }
-    }
-
-    public function eliminar() {
-        try {
-            $query = "DELETE FROM " . $this->table_name . " WHERE id = :id";
+            $query = "DELETE FROM " . $this->table_name . " 
+                     WHERE id = :id AND usuario_id = :usuario_id";
             $stmt = $this->conn->prepare($query);
 
-            $this->id = htmlspecialchars(strip_tags($this->id));
-            $stmt->bindParam(":id", $this->id);
+            // Sanitizar datos
+            $id = htmlspecialchars(strip_tags($id));
+            $usuario_id = htmlspecialchars(strip_tags($usuario_id));
+
+            // Vincular parámetros
+            $stmt->bindParam(":id", $id);
+            $stmt->bindParam(":usuario_id", $usuario_id);
 
             if ($stmt->execute()) {
                 return true;
@@ -141,24 +153,20 @@ class Cita {
         }
     }
 
-    public function leerUno() {
+    public function leerUno($id, $usuario_id) {
         try {
-            $query = "SELECT id, id_mascota, fecha, hora, motivo, estado FROM " . $this->table_name . " WHERE id = :id LIMIT 0,1";
+            $query = "SELECT c.*, m.nombre as mascota_nombre 
+                     FROM " . $this->table_name . " c
+                     INNER JOIN mascotas m ON c.mascota_id = m.id
+                     WHERE c.id = :id AND c.usuario_id = :usuario_id 
+                     LIMIT 0,1";
+            
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(":id", $this->id);
+            $stmt->bindParam(":id", $id);
+            $stmt->bindParam(":usuario_id", $usuario_id);
             $stmt->execute();
 
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($row) {
-                $this->id_mascota = $row['id_mascota'];
-                $this->fecha = $row['fecha'];
-                $this->hora = $row['hora'];
-                $this->motivo = $row['motivo'];
-                $this->estado = $row['estado'];
-                return true;
-            }
-            return false;
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
             throw new Exception("Error al leer la cita: " . $e->getMessage());
         }

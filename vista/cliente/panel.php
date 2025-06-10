@@ -20,8 +20,9 @@ $user = $_SESSION['user'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Cuenta - Guau</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
         :root {
             --primary-color: #498f9d;
@@ -121,141 +122,193 @@ $user = $_SESSION['user'];
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
+            <a class="navbar-brand d-flex align-items-center">
                 <img src="recursos/logo.png" alt="Logo" class="logo-img" style="height: 40px;">
                 <span class="h4 mb-0 ms-2">Guau</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../index.php">Inicio</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../nosotros.php">Sobre Nosotros</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../contacto.php">Contacto</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../../controlador/usuariocontroller.php?action=logout">Cerrar Sesión</a>
-                    </li>
-                </ul>
+            <div class="d-flex">
+                <a href="../../controlador/logout.php" class="btn btn-danger">
+                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                </a>
             </div>
         </div>
     </nav>
 
     <main class="container py-4">
         <div class="row mb-4">
-            <div class="col">
-                <h2>Bienvenido, <?php echo htmlspecialchars($user['nombre']); ?></h2>
-            </div>
-        </div>
+            <div class="container mt-4">
+                <h1 class="mb-4">Bienvenido, <?php echo htmlspecialchars($_SESSION['user']['nombre']); ?></h1>
 
-        <div class="nav nav-tabs mb-4">
-            <button class="nav-link active" data-bs-toggle="tab" data-section="pets">Mis Mascotas</button>
-            <button class="nav-link" data-bs-toggle="tab" data-section="appointments">Citas</button>
-            <button class="nav-link" data-bs-toggle="tab" data-section="shop">Tienda</button>
-        </div>
+                <?php if (isset($_SESSION['mensaje'])): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <?php 
+                        echo htmlspecialchars($_SESSION['mensaje']); 
+                        unset($_SESSION['mensaje']);
+                        ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-        <div class="tab-content">
-            <section id="pets-section" class="content-section active">
-                <div class="section-header">
-                    <h3>Mis Mascotas</h3>
-                    <button id="show-add-pet-form" class="add-button">
-                        <i class="bi bi-plus-circle me-2"></i>Agregar Mascota
-                    </button>
-                </div>
-                <form id="add-pet-form" class="hidden form-card">
-                    <h4>Registrar Nueva Mascota</h4>
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="pet-name" placeholder="Nombre de la mascota" required>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <?php 
+                        echo htmlspecialchars($_SESSION['error']); 
+                        unset($_SESSION['error']);
+                        ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                    <div class="mb-3">
-                        <select class="form-select" id="pet-type" required>
-                            <option value="" disabled selected>Tipo de mascota</option>
-                            <option value="dog">Perro</option>
-                            <option value="cat">Gato</option>
-                            <option value="bird">Pájaro</option>
-                            <option value="other">Otro</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="pet-breed" placeholder="Raza (opcional)">
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <button type="button" id="cancel-add-pet" class="btn btn-secondary">Cancelar</button>
-                    </div>
-                </form>
-                <div id="pet-list" class="card-container">
-                    <p class="text-muted">Aún no tienes mascotas registradas. ¡Agrega una!</p>
-                </div>
-            </section>
+                <?php endif; ?>
 
-            <section id="appointments-section" class="content-section hidden">
-                <div class="section-header">
-                    <h3>Citas Programadas</h3>
-                    <button id="show-add-appointment-form" class="add-button">
-                        <i class="bi bi-plus-circle me-2"></i>Agendar Cita
-                    </button>
-                </div>
-                <form id="add-appointment-form" class="hidden form-card">
-                    <h4>Agendar Nueva Cita</h4>
-                    <div class="mb-3">
-                        <select class="form-select" id="appointment-pet-select" required>
-                            <option value="" disabled selected>Selecciona una mascota</option>
-                        </select>
+                <ul class="nav nav-tabs mb-4" id="myTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" 
+                                id="mascotas-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#mascotas" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="mascotas" 
+                                aria-selected="true">Mis Mascotas</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" 
+                                id="citas-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#citas" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="citas" 
+                                aria-selected="false">Citas</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" 
+                                id="tienda-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#tienda" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="tienda" 
+                                aria-selected="false">Tienda</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="myTabsContent">
+                    <div class="tab-pane fade show active" 
+                         id="mascotas" 
+                         role="tabpanel" 
+                         aria-labelledby="mascotas-tab">
+                        <?php include 'mascotas.php'; ?>
                     </div>
-                    <div class="mb-3">
-                        <select class="form-select" id="appointment-service" required>
-                            <option value="" disabled selected>Tipo de servicio</option>
-                            <option value="Peluquería">Peluquería</option>
-                            <option value="Consulta Veterinaria">Consulta Veterinaria</option>
-                            <option value="Vacunación">Vacunación</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <input type="datetime-local" class="form-control" id="appointment-date" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Agendar</button>
-                        <button type="button" id="cancel-add-appointment" class="btn btn-secondary">Cancelar</button>
-                    </div>
-                </form>
-                <div id="appointment-list" class="card-container">
-                    <p class="text-muted">No tienes citas programadas.</p>
-                </div>
-            </section>
-
-            <section id="shop-section" class="content-section hidden">
-                <div class="section-header">
-                    <h3>Tienda de Artículos</h3>
-                </div>
-                <div class="shop-layout">
-                    <div id="product-grid" class="card-container"></div>
-                    <aside id="cart">
-                        <h4>Carrito de Compras</h4>
-                        <div id="cart-items">
-                            <p class="text-muted">Tu carrito está vacío.</p>
+                    <div class="tab-pane fade" 
+                         id="citas" 
+                         role="tabpanel" 
+                         aria-labelledby="citas-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3>Mis Citas</h3>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#citaModal">
+                                <i class="bi bi-calendar-plus me-2"></i>Agendar Cita
+                            </button>
                         </div>
-                        <p class="cart-total">Total: <span id="cart-total-amount">$0.00</span></p>
-                        <button id="checkout-btn" class="btn btn-primary w-100" disabled>Pagar</button>
-                    </aside>
+                        <div id="appointment-list"></div>
+                    </div>
+                    <div class="tab-pane fade" 
+                         id="tienda" 
+                         role="tabpanel" 
+                         aria-labelledby="tienda-tab">
+                        <div id="product-list"></div>
+                    </div>
                 </div>
-            </section>
+            </div>
+            </div>
         </div>
     </main>
 
     <footer class="py-4 mt-5" style="background-color: var(--primary-color);">
-        <div class="container text-center">
-            <p class="mb-0 text-white">&copy; 2025 Guau. Todos los derechos reservados.</p>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="mb-3">Guau - Tienda de Mascotas</h5>
+                    <p>Cuidando a tus mascotas con amor y profesionalismo</p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">Horario de Atención</h5>
+                    <p>Lunes a Sábado: 9:00 AM - 7:00 PM<br>Domingo: 10:00 AM - 4:00 PM</p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">Contacto</h5>
+                    <p><i class="bi bi-telephone-fill me-2"></i>+51 123 456 789<br>
+                    <i class="bi bi-envelope-fill me-2"></i>contacto@guau.com</p>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.1);">
+            <p class="mb-0">&copy; 2025 Guau. Todos los derechos reservados.</p>
         </div>
     </footer>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Pasar el ID del usuario a JavaScript
+        const userId = <?php echo json_encode($_SESSION['user']['id']); ?>;
+        $(document).ready(function() {
+            // Activar la pestaña según la URL
+            let hash = window.location.hash;
+            if (hash) {
+                $('.nav-tabs a[href="' + hash + '"]').tab('show');
+            }
+
+            // Actualizar URL al cambiar de pestaña
+            $('.nav-tabs a').on('click', function (e) {
+                $(this).tab('show');
+                let scrollmem = $('body').scrollTop();
+                window.location.hash = this.hash;
+                $('html,body').scrollTop(scrollmem);
+            });
+        });
+    </script>
     <script src="script.js"></script>
+
+<!-- Modal para agendar cita -->
+<div class="modal fade" id="citaModal" tabindex="-1" aria-labelledby="citaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="citaModalLabel">Agendar Nueva Cita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="citaForm">
+                    <div class="mb-3">
+                        <label for="mascota-select" class="form-label">Mascota</label>
+                        <select class="form-select" id="mascota-select" required>
+                            <option value="">Seleccione una mascota</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="servicio-select" class="form-label">Servicio</label>
+                        <select class="form-select" id="servicio-select" required>
+                            <option value="">Seleccione un servicio</option>
+                            <option value="lavado">Lavado de mascota</option>
+                            <option value="guarderia">Guardería</option>
+                            <option value="valoracion">Valoración</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha-input" class="form-label">Fecha y Hora</label>
+                        <input type="datetime-local" class="form-control" id="fecha-input" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notas-input" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notas-input" rows="3" 
+                                placeholder="Ej: La mascota debe bañarse con cuidado, tiene piel sensible..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="agendarCita()">Agendar Cita</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

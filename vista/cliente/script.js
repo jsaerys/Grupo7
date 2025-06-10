@@ -9,12 +9,7 @@ const sounds = {
 let pets = [];
 let appointments = [];
 let cart = [];
-let products = [
-    { id: 1, name: 'Cama para Mascotas', price: 49.99, image: 'recursos/pet-bed.png', description: 'Cómoda cama para tu mascota' },
-    { id: 2, name: 'Comida para Perros', price: 29.99, image: 'recursos/dog-food.png', description: 'Alimento premium para perros' },
-    { id: 3, name: 'Juguete para Gatos', price: 9.99, image: 'recursos/cat-toy.png', description: 'Juguete interactivo para gatos' },
-    { id: 4, name: 'Correa para Paseos', price: 19.99, image: 'recursos/leash.png', description: 'Correa resistente y ajustable' }
-];
+let products = [];
 
 // Elementos DOM
 const petsList = document.getElementById('pet-list');
@@ -87,60 +82,132 @@ document.getElementById('cancel-add-appointment').addEventListener('click', () =
     sounds.cancel.play();
 });
 
-document.getElementById('add-appointment-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const petId = document.getElementById('appointment-pet-select').value;
-    const service = document.getElementById('appointment-service').value;
-    const date = document.getElementById('appointment-date').value;
+// Cargar mascotas en el select del formulario de citas
+async function loadPetSelect() {
+    try {
+        const response = await fetch('../../controlador/mascotacontroller.php?action=listarPorUsuario&usuario_id=' + userId);
+        const data = await response.json();
+        
+        const select = document.getElementById('mascota-select');
+        select.innerHTML = '<option value="">Seleccione una mascota</option>' +
+            data.map(pet => `<option value="${pet.id}">${pet.nombre}</option>`).join('');
+    } catch (error) {
+        console.error('Error al cargar mascotas:', error);
+        alert('Error al cargar las mascotas');
+    }
+}
+
+// Función para agendar cita
+async function agendarCita() {
+    const form = document.getElementById('citaForm');
+    const mascotaSelect = document.getElementById('mascota-select');
+    const servicioSelect = document.getElementById('servicio-select');
+    const fechaInput = document.getElementById('fecha-input');
+    const notasInput = document.getElementById('notas-input');
+
+    if (!mascotaSelect.value || !servicioSelect.value || !fechaInput.value) {
+        alert('Por favor complete todos los campos requeridos');
+        return;
+    }
+
+    // Validar que la fecha no sea en el pasado
+    const selectedDate = new Date(fechaInput.value);
+    const now = new Date();
+    if (selectedDate < now) {
+        alert('La fecha de la cita no puede ser en el pasado');
+        return;
+    }
 
     try {
-        const response = await fetch('../../controlador/citacontroller.php?action=create', {
+        const formData = new FormData();
+        formData.append('action', 'crear');
+        formData.append('id_mascota', mascotaSelect.value);
+        formData.append('motivo', servicioSelect.value);
+        formData.append('fecha', fechaInput.value);
+        formData.append('notas', notasInput.value);
+
+        const response = await fetch('../../controlador/citacontroller.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `mascota_id=${encodeURIComponent(petId)}&servicio=${encodeURIComponent(service)}&fecha=${encodeURIComponent(date)}`
+            body: formData
         });
 
         const data = await response.json();
-        if (data.success) {
+
+        if (response.ok) {
             sounds.success.play();
-            document.getElementById('add-appointment-form').reset();
-            document.getElementById('add-appointment-form').classList.add('hidden');
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('citaModal'));
+            modal.hide();
+            
+            // Limpiar formulario
+            form.reset();
+            
+            // Recargar lista de citas
             loadAppointments();
+            
+            // Mostrar mensaje de éxito
+            alert('Cita agendada con éxito');
         } else {
-            alert(data.message || 'Error al agendar la cita');
+            throw new Error(data.message || 'Error al agendar la cita');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al agendar la cita');
+        sounds.cancel.play();
+        alert(error.message || 'Error al agendar la cita');
     }
-});
+}
 
 // Cargar mascotas
 async function loadPets() {
     try {
-        const response = await fetch('../../controlador/mascotacontroller.php?action=list');
+        const response = await fetch(`../../controlador/mascotacontroller.php?action=list`);
         const data = await response.json();
-        pets = data;
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Error al cargar las mascotas');
+        }
+        
+        pets = data.data || [];
         renderPets();
         updateAppointmentPetSelect();
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al cargar las mascotas');
+        document.getElementById('pet-list').innerHTML = 
+            `<div class="alert alert-danger">${error.message}</div>`;
     }
 }
 
 // Cargar citas
 async function loadAppointments() {
     try {
-        const response = await fetch('../../controlador/citacontroller.php?action=list');
+        const response = await fetch(`../../controlador/citacontroller.php?action=listarPorUsuario&usuario_id=${userId}`);
         const data = await response.json();
-        appointments = data;
+        appointments = data || [];
         renderAppointments();
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al cargar las citas');
+        document.getElementById('appointment-list').innerHTML = 
+            '<div class="alert alert-danger">Error al cargar las citas. Por favor, inicia sesión nuevamente.</div>';
+    }
+}
+
+// Cargar productos desde el servidor
+async function loadProducts() {
+    try {
+        const response = await fetch('../../controlador/productocontroller.php?action=listar');
+        const data = await response.json();
+        products = data.map(product => ({
+            id: product.id,
+            name: product.nombre,
+            price: parseFloat(product.precio),
+            image: `recursos/${product.imagen}`,
+            description: product.descripcion,
+            stock: product.stock
+        }));
+        renderProducts();
+    } catch (error) {
+        console.error('Error al cargar productos:', error);
+        productGrid.innerHTML = '<div class="alert alert-danger">Error al cargar los productos. Por favor, intente más tarde.</div>';
     }
 }
 
@@ -194,7 +261,7 @@ function renderAppointments() {
                         <i class="bi bi-calendar-check fs-3 text-primary"></i>
                     </div>
                     <div>
-                        <h5 class="card-title mb-1">${appointment.servicio}</h5>
+                        <h5 class="card-title mb-1">${appointment.motivo}</h5>
                         <p class="text-muted mb-0">${appointment.mascota_nombre}</p>
                     </div>
                 </div>
@@ -203,12 +270,21 @@ function renderAppointments() {
                         <i class="bi bi-clock me-2"></i>
                         <span>${new Date(appointment.fecha).toLocaleString()}</span>
                     </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-bookmark me-2"></i>
+                        <span class="badge ${appointment.estado === 'pendiente' ? 'bg-warning' : 
+                                              (appointment.estado === 'completada' ? 'bg-success' : 'bg-danger')}">
+                            ${appointment.estado.charAt(0).toUpperCase() + appointment.estado.slice(1)}
+                        </span>
+                    </div>
                 </div>
-                <div class="mt-auto text-end">
-                    <button onclick="cancelAppointment(${appointment.id})" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-x-circle me-1"></i>Cancelar Cita
-                    </button>
-                </div>
+                ${appointment.estado === 'pendiente' ? `
+                    <div class="mt-auto text-end">
+                        <button onclick="cancelarCita(${appointment.id})" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar Cita
+                        </button>
+                    </div>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -216,7 +292,7 @@ function renderAppointments() {
 
 // Actualizar select de mascotas para citas
 function updateAppointmentPetSelect() {
-    const select = document.getElementById('appointment-pet-select');
+    const select = document.getElementById('mascota-select');
     select.innerHTML = '<option value="" disabled selected>Selecciona una mascota</option>' +
         pets.map(pet => `<option value="${pet.id}">${pet.nombre}</option>`).join('');
 }
@@ -243,19 +319,27 @@ async function deletePet(id) {
 }
 
 // Cancelar cita
-async function cancelAppointment(id) {
-    if (!confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-        return;
-    }
+async function cancelarCita(id) {
+    if (!confirm('¿Está seguro de cancelar esta cita?')) return;
 
     try {
-        const response = await fetch(`../../controlador/citacontroller.php?action=delete&id=${id}`);
+        const formData = new FormData();
+        formData.append('action', 'cancelar');
+        formData.append('id', id);
+
+        const response = await fetch('../../controlador/citacontroller.php', {
+            method: 'POST',
+            body: formData
+        });
+
         const data = await response.json();
-        if (data.success) {
-            sounds.success.play();
-            loadAppointments();
+
+        if (response.ok) {
+            sounds.cancel.play();
+            alert('Cita cancelada con éxito');
+            renderAppointments();
         } else {
-            alert(data.message || 'Error al cancelar la cita');
+            throw new Error(data.error || 'Error al cancelar la cita');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -265,14 +349,24 @@ async function cancelAppointment(id) {
 
 // Renderizar productos
 function renderProducts() {
+    if (products.length === 0) {
+        productGrid.innerHTML = '<p class="text-muted">No hay productos disponibles en este momento.</p>';
+        return;
+    }
+
     productGrid.innerHTML = products.map(product => `
         <div class="card product-card">
             <img src="${product.image}" class="card-img-top" alt="${product.name}">
             <div class="card-body">
                 <h5 class="card-title">${product.name}</h5>
                 <p class="card-text">${product.description}</p>
-                <p class="card-text"><strong>$${product.price.toFixed(2)}</strong></p>
-                <button onclick="addToCart(${product.id})" class="btn btn-primary">
+                <p class="card-text">
+                    <strong>$${product.price.toFixed(2)}</strong>
+                    ${product.stock > 0 ? 
+                        `<span class="badge bg-success ms-2">Stock: ${product.stock}</span>` : 
+                        '<span class="badge bg-danger ms-2">Sin stock</span>'}
+                </p>
+                <button onclick="addToCart(${product.id})" class="btn btn-primary" ${product.stock <= 0 ? 'disabled' : ''}>
                     <i class="bi bi-cart-plus"></i> Agregar al Carrito
                 </button>
             </div>
@@ -367,6 +461,15 @@ checkoutBtn.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', () => {
     loadPets();
     loadAppointments();
+    loadPetSelect();
     renderProducts();
     renderCart();
+
+    // Configurar fecha mínima en el input de fecha
+    const fechaInput = document.getElementById('fecha-input');
+    if (fechaInput) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        fechaInput.min = now.toISOString().slice(0, 16);
+    }
 });

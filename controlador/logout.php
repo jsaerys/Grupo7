@@ -1,11 +1,18 @@
 <?php
 session_start();
-require_once 'usuariocontroller.php';
 
-$controller = new UsuarioController();
-$resultado = $controller->cerrarSesion();
+// Destruir todas las variables de sesión
+$_SESSION = array();
 
-// Redirigir al usuario a la página de inicio después de cerrar sesión
-header('Location: ../vista/index.php');
+// Destruir la cookie de sesión si existe
+if (isset($_COOKIE[session_name()])) {
+    setcookie(session_name(), '', time() - 3600, '/');
+}
+
+// Destruir la sesión
+session_destroy();
+
+// Redirigir al usuario a la página de login
+header('Location: ../vista/login.php');
 exit;
 ?>

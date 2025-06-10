@@ -71,4 +71,66 @@ class ProductoController {
     public function buscar($termino) {
         return $this->modelo->buscar($termino);
     }
+}
+
+// Manejo de las peticiones
+if (isset($_GET['action'])) {
+    $controller = new ProductoController();
+    header('Content-Type: application/json');
+    
+    try {
+        switch ($_GET['action']) {
+            case 'listar':
+                $productos = $controller->listar();
+                echo json_encode($productos);
+                break;
+                
+            case 'obtener':
+                if (isset($_GET['id'])) {
+                    $producto = $controller->obtener($_GET['id']);
+                    echo json_encode($producto);
+                } else {
+                    throw new Exception('ID no proporcionado');
+                }
+                break;
+                
+            case 'crear':
+                $resultado = $controller->crear($_POST);
+                echo json_encode(['success' => $resultado]);
+                break;
+                
+            case 'actualizar':
+                if (isset($_POST['id'])) {
+                    $resultado = $controller->actualizar($_POST);
+                    echo json_encode(['success' => $resultado]);
+                } else {
+                    throw new Exception('ID no proporcionado');
+                }
+                break;
+                
+            case 'eliminar':
+                if (isset($_GET['id'])) {
+                    $resultado = $controller->eliminar($_GET['id']);
+                    echo json_encode(['success' => $resultado]);
+                } else {
+                    throw new Exception('ID no proporcionado');
+                }
+                break;
+                
+            case 'buscar':
+                if (isset($_GET['termino'])) {
+                    $productos = $controller->buscar($_GET['termino']);
+                    echo json_encode($productos);
+                } else {
+                    throw new Exception('Término de búsqueda no proporcionado');
+                }
+                break;
+                
+            default:
+                throw new Exception('Acción no válida');
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+    }
 } 

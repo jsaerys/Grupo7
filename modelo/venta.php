@@ -5,96 +5,74 @@ class Venta {
     private $conn;
     private $table_name = "ventas";
 
-    public $id;
-    public $id_producto;
-    public $id_cliente;
-    public $cantidad;
-    public $fecha;
-
     public function __construct() {
         $database = new Conexion();
-        $this->conn = $database->getConnection();
+        $this->conn = $database->getConexion();
     }
 
-    public function crear() {
-        $query = "INSERT INTO " . $this->table_name . " SET id_producto=:id_producto, id_cliente=:id_cliente, cantidad=:cantidad, fecha=:fecha";
+    public function crear($venta) {
+        try {
+            $query = "INSERT INTO " . $this->table_name . " 
+                    (usuario_id, productos, total, metodo_pago) 
+                    VALUES (:usuario_id, :productos, :total, :metodo_pago)";
+            
         $stmt = $this->conn->prepare($query);
 
-        $this->id_producto = htmlspecialchars(strip_tags($this->id_producto));
-        $this->id_cliente = htmlspecialchars(strip_tags($this->id_cliente));
-        $this->cantidad = htmlspecialchars(strip_tags($this->cantidad));
-        $this->fecha = htmlspecialchars(strip_tags($this->fecha));
+            // Sanitizar inputs
+            $usuario_id = htmlspecialchars(strip_tags($venta['usuario_id']));
+            $productos = $venta['productos']; // No sanitizamos JSON string
+            $total = floatval($venta['total']);
+            $metodo_pago = htmlspecialchars(strip_tags($venta['metodo_pago']));
 
-        $stmt->bindParam(":id_producto", $this->id_producto);
-        $stmt->bindParam(":id_cliente", $this->id_cliente);
-        $stmt->bindParam(":cantidad", $this->cantidad);
-        $stmt->bindParam(":fecha", $this->fecha);
+            // Vincular parámetros
+            $stmt->bindParam(":usuario_id", $usuario_id);
+            $stmt->bindParam(":productos", $productos);
+            $stmt->bindParam(":total", $total);
+            $stmt->bindParam(":metodo_pago", $metodo_pago);
 
-        if ($stmt->execute()) {
+            if($stmt->execute()) {
             return true;
         }
         return false;
-    }
-
-    public function leer() {
-        $query = "SELECT id, id_producto, id_cliente, cantidad, fecha FROM " . $this->table_name . " ORDER BY id DESC";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt;
-    }
-
-    public function actualizar() {
-        $query = "UPDATE " . $this->table_name . " SET id_producto=:id_producto, id_cliente=:id_cliente, cantidad=:cantidad, fecha=:fecha WHERE id=:id";
-        $stmt = $this->conn->prepare($query);
-
-        $this->id_producto = htmlspecialchars(strip_tags($this->id_producto));
-        $this->id_cliente = htmlspecialchars(strip_tags($this->id_cliente));
-        $this->cantidad = htmlspecialchars(strip_tags($this->cantidad));
-        $this->fecha = htmlspecialchars(strip_tags($this->fecha));
-        $this->id = htmlspecialchars(strip_tags($this->id));
-
-        $stmt->bindParam(":id_producto", $this->id_producto);
-        $stmt->bindParam(":id_cliente", $this->id_cliente);
-        $stmt->bindParam(":cantidad", $this->cantidad);
-        $stmt->bindParam(":fecha", $this->fecha);
-        $stmt->bindParam(":id", $this->id);
-
-        if ($stmt->execute()) {
-            return true;
+        } catch(PDOException $e) {
+            throw new Exception("Error al crear la venta: " . $e->getMessage());
         }
-        return false;
     }
 
-    public function eliminar() {
-        $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+    public function listarPorUsuario($usuario_id) {
+        try {
+            $query = "SELECT v.*, u.nombre as nombre_cliente 
+                    FROM " . $this->table_name . " v
+                    INNER JOIN usuarios u ON v.usuario_id = u.id
+                    WHERE v.usuario_id = :usuario_id
+                    ORDER BY v.fecha DESC";
+
         $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":usuario_id", $usuario_id);
+            $stmt->execute();
 
-        $this->id = htmlspecialchars(strip_tags($this->id));
-
-        $stmt->bindParam(1, $this->id);
-
-        if ($stmt->execute()) {
-            return true;
+            return $stmt;
+        } catch(PDOException $e) {
+            throw new Exception("Error al listar ventas: " . $e->getMessage());
         }
-        return false;
     }
 
-    public function leerUno() {
-        $query = "SELECT id, id_producto, id_cliente, cantidad, fecha FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
+    public function obtenerPorId($id) {
+        try {
+            $query = "SELECT v.*, u.nombre as nombre_cliente 
+                    FROM " . $this->table_name . " v
+                    INNER JOIN usuarios u ON v.usuario_id = u.id
+                    WHERE v.id = :id
+                    LIMIT 0,1";
+
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(1, $this->id);
+            $stmt->bindParam(":id", $id);
         $stmt->execute();
 
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($row) {
-            $this->id_producto = $row['id_producto'];
-            $this->id_cliente = $row['id_cliente'];
-            $this->cantidad = $row['cantidad'];
-            $this->fecha = $row['fecha'];
-            return true;
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            throw new Exception("Error al obtener la venta: " . $e->getMessage());
         }
-        return false;
     }
 }
 ?>

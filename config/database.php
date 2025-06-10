@@ -1,24 +1,26 @@
 <?php
-// Configuración de la base de datos
-$db_config = [
-    'host' => 'localhost',
-    'dbname' => 'veterinaria',
-    'user' => 'root',
-    'password' => ''
-];
+class Database {
+    private $host = "localhost";
+    private $db_name = "veterinaria";
+    private $username = "root";
+    private $password = "";
+    private $conn;
 
-try {
-    // Crear conexión PDO
-    $db = new PDO(
-        "mysql:host={$db_config['host']};dbname={$db_config['dbname']};charset=utf8",
-        $db_config['user'],
-        $db_config['password'],
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        ]
-    );
-} catch (PDOException $e) {
-    die("Error de conexión: " . $e->getMessage());
+    public function getConnection() {
+        $this->conn = null;
+
+        try {
+            $this->conn = new PDO(
+                "mysql:host=" . $this->host . ";dbname=" . $this->db_name,
+                $this->username,
+                $this->password
+            );
+            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->conn->exec("set names utf8");
+        } catch(PDOException $e) {
+            echo "Error de conexión: " . $e->getMessage();
+        }
+
+        return $this->conn;
+    }
 } 

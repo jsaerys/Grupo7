@@ -56,28 +56,33 @@ class Mascota {
         return $stmt;
     }
 
-    public function actualizar() {
-        $query = "UPDATE " . $this->table_name . " SET nombre=:nombre, especie=:especie, raza=:raza, edad=:edad, id_cliente=:id_cliente WHERE id=:id";
-        $stmt = $this->conn->prepare($query);
+    public function actualizar($id, $nombre, $especie, $raza) {
+        try {
+            $query = "UPDATE " . $this->table_name . " 
+                     SET nombre = :nombre, especie = :especie, raza = :raza 
+                     WHERE id = :id";
+            
+            $stmt = $this->conn->prepare($query);
 
-        $this->nombre = htmlspecialchars(strip_tags($this->nombre));
-        $this->especie = htmlspecialchars(strip_tags($this->especie));
-        $this->raza = htmlspecialchars(strip_tags($this->raza));
-        $this->edad = htmlspecialchars(strip_tags($this->edad));
-        $this->id_cliente = htmlspecialchars(strip_tags($this->id_cliente));
-        $this->id = htmlspecialchars(strip_tags($this->id));
+            // Sanitizar inputs
+            $id = htmlspecialchars(strip_tags($id));
+            $nombre = htmlspecialchars(strip_tags($nombre));
+            $especie = htmlspecialchars(strip_tags($especie));
+            $raza = htmlspecialchars(strip_tags($raza));
 
-        $stmt->bindParam(":nombre", $this->nombre);
-        $stmt->bindParam(":especie", $this->especie);
-        $stmt->bindParam(":raza", $this->raza);
-        $stmt->bindParam(":edad", $this->edad);
-        $stmt->bindParam(":id_cliente", $this->id_cliente);
-        $stmt->bindParam(":id", $this->id);
+            // Vincular parámetros
+            $stmt->bindParam(":id", $id);
+            $stmt->bindParam(":nombre", $nombre);
+            $stmt->bindParam(":especie", $especie);
+            $stmt->bindParam(":raza", $raza);
 
-        if ($stmt->execute()) {
-            return true;
+            if($stmt->execute()) {
+                return true;
+            }
+            throw new Exception("Error al actualizar la mascota");
+        } catch(PDOException $e) {
+            throw new Exception("Error al actualizar la mascota: " . $e->getMessage());
         }
-        return false;
     }
 
     public function eliminar($id, $usuario_id) {
@@ -98,7 +103,7 @@ class Mascota {
             if($stmt->execute()) {
                 return true;
             }
-            return false;
+            throw new Exception("Error al eliminar la mascota");
         } catch(PDOException $e) {
             throw new Exception("Error al eliminar la mascota: " . $e->getMessage());
         }
@@ -132,12 +137,55 @@ class Mascota {
                      ORDER BY nombre ASC";
             
             $stmt = $this->conn->prepare($query);
+            
+            // Sanitizar input
+            $usuario_id = htmlspecialchars(strip_tags($usuario_id));
+            
+            // Vincular parámetro
             $stmt->bindParam(":usuario_id", $usuario_id);
             $stmt->execute();
 
             return $stmt;
         } catch(PDOException $e) {
             throw new Exception("Error al listar mascotas: " . $e->getMessage());
+        }
+    }
+
+    public function obtenerPorId($id) {
+        try {
+            $query = "SELECT m.*, u.nombre as dueno 
+                     FROM " . $this->table_name . " m 
+                     LEFT JOIN usuarios u ON m.usuario_id = u.id 
+                     WHERE m.id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            // Sanitizar input
+            $id = htmlspecialchars(strip_tags($id));
+            
+            // Vincular parámetro
+            $stmt->bindParam(":id", $id);
+            $stmt->execute();
+
+            return $stmt;
+        } catch(PDOException $e) {
+            throw new Exception("Error al obtener la mascota: " . $e->getMessage());
+        }
+    }
+
+    public function listarTodas() {
+        try {
+            $query = "SELECT m.*, u.nombre as dueno 
+                     FROM " . $this->table_name . " m 
+                     LEFT JOIN usuarios u ON m.usuario_id = u.id 
+                     ORDER BY m.id DESC";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+
+            return $stmt;
+        } catch(PDOException $e) {
+            throw new Exception("Error al listar todas las mascotas: " . $e->getMessage());
         }
     }
 }

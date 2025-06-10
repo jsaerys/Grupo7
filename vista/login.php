@@ -14,12 +14,12 @@ if (isset($_SESSION['user'])) {
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Guau - Ingreso</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Guau - Ingreso</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/styles.css">
     <style>
         body {
             background-color: #f5f5f5;
@@ -101,21 +101,21 @@ if (isset($_SESSION['user'])) {
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <span class="logo">🐾 Guau</span>
-        <?php
-        if (isset($_SESSION['message'])) {
+  <div class="login-container">
+    <span class="logo">🐾 Guau</span>
+    <?php
+    if (isset($_SESSION['message'])) {
             echo '<div class="message">' . htmlspecialchars($_SESSION['message']) . '</div>';
-            unset($_SESSION['message']);
-        }
-        if (isset($_SESSION['error'])) {
+        unset($_SESSION['message']);
+    }
+    if (isset($_SESSION['error'])) {
             echo '<div class="error">' . htmlspecialchars($_SESSION['error']) . '</div>';
-            unset($_SESSION['error']);
-        }
-        ?>
+        unset($_SESSION['error']);
+    }
+    ?>
 
         <form id="loginForm" action="../../controlador/usuariocontroller.php" method="POST">
-            <input type="hidden" name="action" value="login">
+      <input type="hidden" name="action" value="login">
             <div class="mb-3">
                 <label for="email" class="form-label">Correo electrónico</label>
                 <input type="email" class="form-control" id="email" name="email" required>
@@ -127,8 +127,8 @@ if (isset($_SESSION['user'])) {
             <button type="submit" class="btn btn-primary w-100">
                 <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
             </button>
-        </form>
-        <div class="info">
+    </form>
+    <div class="info">
             <a href="index.php" class="d-block mt-3">
                 <i class="bi bi-house-door me-1"></i>Volver al inicio
             </a>

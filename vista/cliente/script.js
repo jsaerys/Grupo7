@@ -11,10 +11,14 @@ let appointments = [];
 let cart = [];
 let products = [];
 
+// Variables globales para el carrito
+let carrito = [];
+let carritoModal = null;
+
 // Elementos DOM
 const petsList = document.getElementById('pet-list');
 const appointmentsList = document.getElementById('appointment-list');
-const productGrid = document.getElementById('product-grid');
+const productosContainer = document.getElementById('productosContainer');
 const cartItems = document.getElementById('cart-items');
 const cartTotalAmount = document.getElementById('cart-total-amount');
 const checkoutBtn = document.getElementById('checkout-btn');
@@ -141,11 +145,11 @@ async function agendarCita() {
     }
 
     try {
-        const formData = new FormData();
-        formData.append('action', 'crear');
-        formData.append('id_mascota', mascotaSelect.value);
-        formData.append('motivo', servicioSelect.value);
-        formData.append('fecha', fechaInput.value);
+    const formData = new FormData();
+    formData.append('action', 'crear');
+    formData.append('id_mascota', mascotaSelect.value);
+    formData.append('motivo', servicioSelect.value);
+    formData.append('fecha', fechaInput.value);
         formData.append('notas', notasInput.value);
 
         const response = await fetch('../../controlador/citacontroller.php', {
@@ -213,23 +217,348 @@ async function loadAppointments() {
     }
 }
 
-// Cargar productos desde el servidor
+// Función para inicializar los eventos de las pestañas
+function initializeTabs() {
+    const triggerTabList = [].slice.call(document.querySelectorAll('#myTabs button'));
+    triggerTabList.forEach(function(triggerEl) {
+        const tabTrigger = new bootstrap.Tab(triggerEl);
+        
+        triggerEl.addEventListener('click', function(event) {
+            event.preventDefault();
+            tabTrigger.show();
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado, iniciando aplicación...');
+    
+    // Inicializar los tabs
+    initializeTabs();
+
+    // Configurar eventos para las citas
+    const citasTab = document.querySelector('#citas-tab');
+    const citasPane = document.querySelector('#citas');
+    const tiendaTab = document.querySelector('#tienda-tab');
+    const tiendaPane = document.querySelector('#tienda');
+    
+    if (citasTab && citasPane) {
+        console.log('Configurando eventos de citas...');
+        
+        // Cargar citas si la pestaña está activa inicialmente
+        if (citasPane.classList.contains('show active')) {
+            console.log('Pestaña de citas activa inicialmente, cargando citas...');
+            setTimeout(() => cargarCitas(), 100);
+        }
+
+        // Evento para cuando se muestra la pestaña de citas
+        citasTab.addEventListener('shown.bs.tab', function (e) {
+            console.log('Pestaña de citas activada');
+            cargarCitas();
+        });
+    }
+
+    // Configurar eventos para la tienda
+    if (tiendaTab && tiendaPane) {
+        console.log('Configurando eventos de tienda...');
+        
+        // Cargar productos si la pestaña está activa inicialmente
+        if (tiendaPane.classList.contains('show active')) {
+            console.log('Pestaña de tienda activa inicialmente, cargando productos...');
+            setTimeout(() => loadProducts(), 100);
+        }
+
+        // Evento para cuando se muestra la pestaña de tienda
+        tiendaTab.addEventListener('shown.bs.tab', function (e) {
+            console.log('Pestaña de tienda activada, cargando productos...');
+            loadProducts();
+        });
+    } else {
+        console.error('No se encontraron elementos de la pestaña de tienda');
+    }
+
+    // Inicializar el modal del carrito
+    const modalElement = document.getElementById('carritoModal');
+    if (modalElement) {
+        carritoModal = new bootstrap.Modal(modalElement);
+    }
+
+    // Evento para mostrar el carrito
+    const carritoBtn = document.getElementById('carritoBtn');
+    if (carritoBtn) {
+        carritoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (carritoModal) {
+                carritoModal.show();
+            }
+        });
+    }
+
+    // Evento para vaciar el carrito
+    const vaciarCarritoBtn = document.getElementById('vaciarCarrito');
+    if (vaciarCarritoBtn) {
+        vaciarCarritoBtn.addEventListener('click', function() {
+            Swal.fire({
+                title: '¿Vaciar carrito?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, vaciar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    vaciarCarrito();
+                }
+            });
+        });
+    }
+
+    // Evento para procesar la compra
+    const procesarCompraBtn = document.getElementById('procesarCompra');
+    if (procesarCompraBtn) {
+        procesarCompraBtn.addEventListener('click', procesarCompra);
+    }
+});
+
+// Función para formatear precio con separador de miles y decimales
+function formatPrice(price) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
+
+// Función para cargar productos
 async function loadProducts() {
+    console.log('Iniciando carga de productos...');
+    const productosContainer = document.getElementById('productosContainer');
+    
+    if (!productosContainer) {
+        console.error('No se encontró el contenedor de productos');
+        return;
+    }
+
     try {
-        const response = await fetch('../../controlador/productocontroller.php?action=listar');
+        // Mostrar spinner mientras carga
+        productosContainer.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando productos...</p>
+            </div>`;
+
+        console.log('Realizando petición al servidor...');
+        const response = await fetch('../../controlador/productocontroller.php?action=getAll');
+        console.log('Respuesta del servidor:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
-        products = data.map(product => ({
-            id: product.id,
-            name: product.nombre,
-            price: parseFloat(product.precio),
-            image: `recursos/${product.imagen}`,
-            description: product.descripcion,
-            stock: product.stock
-        }));
-        renderProducts();
+        console.log('Datos de productos recibidos:', data);
+
+        if (data.success && data.productos && Array.isArray(data.productos)) {
+            console.log(`Se encontraron ${data.productos.length} productos`);
+            if (data.productos.length > 0) {
+                productosContainer.innerHTML = data.productos.map(producto => {
+                    console.log('Procesando producto:', producto);
+                    return `
+                        <div class="col-12 col-md-6 col-lg-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">${producto.nombre}</h5>
+                                    <p class="card-text text-muted small">${producto.descripcion || 'Sin descripción'}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="h5 mb-0">$${Number(producto.precio).toLocaleString('es-CO')}</span>
+                                        <button class="btn btn-primary btn-sm" onclick="agregarAlCarrito({
+                                            id: ${producto.id},
+                                            nombre: '${producto.nombre.replace(/'/g, "\\'")}',
+                                            precio: ${producto.precio}
+                                        })">
+                                            <i class="bi bi-cart-plus"></i> Agregar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                console.log('Productos renderizados correctamente');
+            } else {
+                productosContainer.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-shop-window fs-1 text-muted"></i>
+                        <p class="mt-3 text-muted">No hay productos disponibles</p>
+                    </div>`;
+                console.log('No se encontraron productos para mostrar');
+            }
+        } else {
+            console.error('Respuesta del servidor inválida:', data);
+            throw new Error(data.message || 'Error al cargar los productos');
+        }
     } catch (error) {
         console.error('Error al cargar productos:', error);
-        productGrid.innerHTML = '<div class="alert alert-danger">Error al cargar los productos. Por favor, intente más tarde.</div>';
+        productosContainer.innerHTML = `
+            <div class="col-12 text-center py-5 text-danger">
+                <i class="bi bi-exclamation-triangle fs-1"></i>
+                <p class="mt-3">Error al cargar los productos: ${error.message}</p>
+            </div>`;
+    }
+}
+
+// Función para actualizar el contador del carrito
+function actualizarContadorCarrito() {
+    const contador = document.getElementById('carritoCount');
+    if (contador) {
+        contador.textContent = carrito.length;
+    }
+}
+
+// Función para calcular el total del carrito
+function calcularTotalCarrito() {
+    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+}
+
+// Función para actualizar la vista del carrito
+function actualizarVistaCarrito() {
+    const carritoItems = document.getElementById('carritoItems');
+    const carritoTotal = document.getElementById('carritoTotal');
+    
+    if (carritoItems && carritoTotal) {
+        if (carrito.length === 0) {
+            carritoItems.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bi bi-cart-x fs-1 text-muted"></i>
+                    <p class="text-muted mt-3">Tu carrito está vacío</p>
+                </div>`;
+        } else {
+            carritoItems.innerHTML = carrito.map(item => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <h6 class="mb-0">${item.nombre}</h6>
+                        <small class="text-muted">$${Number(item.precio).toLocaleString('es-CO')} x ${item.cantidad}</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-primary me-2" onclick="cambiarCantidad(${item.id}, ${item.cantidad - 1})">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <span class="mx-2">${item.cantidad}</span>
+                        <button class="btn btn-sm btn-outline-primary me-2" onclick="cambiarCantidad(${item.id}, ${item.cantidad + 1})">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        carritoTotal.textContent = `$${calcularTotalCarrito().toLocaleString('es-CO')}`;
+    }
+}
+
+// Función para agregar al carrito
+async function agregarAlCarrito(producto) {
+    const itemExistente = carrito.find(item => item.id === producto.id);
+    
+    if (itemExistente) {
+        itemExistente.cantidad++;
+    } else {
+        carrito.push({
+            id: producto.id,
+            nombre: producto.nombre,
+            precio: producto.precio,
+            cantidad: 1
+        });
+    }
+    
+    actualizarContadorCarrito();
+    actualizarVistaCarrito();
+    
+    // Mostrar notificación
+    Swal.fire({
+        icon: 'success',
+        title: '¡Agregado!',
+        text: 'Producto agregado al carrito',
+        timer: 1500,
+        showConfirmButton: false
+    });
+}
+
+// Función para cambiar la cantidad de un item
+function cambiarCantidad(id, nuevaCantidad) {
+    if (nuevaCantidad <= 0) {
+        eliminarDelCarrito(id);
+        return;
+    }
+    
+    const item = carrito.find(item => item.id === id);
+    if (item) {
+        item.cantidad = nuevaCantidad;
+        actualizarVistaCarrito();
+    }
+}
+
+// Función para eliminar del carrito
+function eliminarDelCarrito(id) {
+    carrito = carrito.filter(item => item.id !== id);
+    actualizarContadorCarrito();
+    actualizarVistaCarrito();
+}
+
+// Función para vaciar el carrito
+function vaciarCarrito() {
+    carrito = [];
+    actualizarContadorCarrito();
+    actualizarVistaCarrito();
+}
+
+// Función para procesar la compra
+async function procesarCompra() {
+    try {
+        if (carrito.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Carrito vacío',
+                text: 'Agrega productos antes de procesar la compra'
+            });
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: '¿Procesar compra?',
+            text: `Total a pagar: $${calcularTotalCarrito().toLocaleString('es-CO')}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, procesar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            // Aquí iría la lógica para procesar la compra
+            // Por ahora solo simulamos el proceso
+            Swal.fire({
+                icon: 'success',
+                title: '¡Compra exitosa!',
+                text: 'Gracias por tu compra'
+            });
+            vaciarCarrito();
+            if (carritoModal) {
+                carritoModal.hide();
+            }
+        }
+    } catch (error) {
+        console.error('Error al procesar la compra:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo procesar la compra'
+        });
     }
 }
 
@@ -371,127 +700,156 @@ async function cancelarCita(id) {
 
 // Renderizar productos
 function renderProducts() {
-    if (products.length === 0) {
-        productGrid.innerHTML = '<p class="text-muted">No hay productos disponibles en este momento.</p>';
+    console.log('Iniciando renderizado de productos...');
+    const container = document.getElementById('productosContainer');
+    console.log('Contenedor:', container);
+    console.log('Productos a renderizar:', products);
+    
+    if (!container) {
+        console.error('No se encontró el contenedor de productos');
         return;
     }
-
-    productGrid.innerHTML = products.map(product => `
-        <div class="card product-card">
-            <img src="${product.image}" class="card-img-top" alt="${product.name}">
-            <div class="card-body">
-                <h5 class="card-title">${product.name}</h5>
-                <p class="card-text">${product.description}</p>
-                <p class="card-text">
-                    <strong>$${product.price.toFixed(2)}</strong>
-                    ${product.stock > 0 ? 
-                        `<span class="badge bg-success ms-2">Stock: ${product.stock}</span>` : 
-                        '<span class="badge bg-danger ms-2">Sin stock</span>'}
+    
+    if (!Array.isArray(products) || products.length === 0) {
+        console.log('No hay productos para mostrar');
+        container.innerHTML = `
+            <div class="col-12">
+                <p class="text-muted text-center">
+                    <i class="bi bi-box-seam fs-2 d-block mb-2"></i>
+                    No hay productos disponibles en este momento.
                 </p>
-                <button onclick="addToCart(${product.id})" class="btn btn-primary" ${product.stock <= 0 ? 'disabled' : ''}>
-                    <i class="bi bi-cart-plus"></i> Agregar al Carrito
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Agregar al carrito
-function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
-    const cartItem = cart.find(item => item.id === productId);
-
-    if (cartItem) {
-        cartItem.quantity++;
-    } else {
-        cart.push({ ...product, quantity: 1 });
-    }
-
-    sounds.addToCart.play();
-    renderCart();
-}
-
-// Renderizar carrito
-function renderCart() {
-    if (cart.length === 0) {
-        cartItems.innerHTML = '<p class="text-muted">Tu carrito está vacío.</p>';
-        cartTotalAmount.textContent = '$0.00';
-        checkoutBtn.disabled = true;
+            </div>`;
         return;
     }
 
-    cartItems.innerHTML = cart.map(item => `
-        <div class="cart-item">
-            <div>
-                <strong>${item.name}</strong><br>
-                <small>$${item.price.toFixed(2)} x ${item.quantity}</small>
+    try {
+        const productsHTML = products.map(product => `
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <img src="${product.image}" 
+                         class="card-img-top" 
+                         alt="${product.name}"
+                         onerror="this.src='../../assets/img/no-image.jpg'" 
+                         style="height: 200px; object-fit: cover;">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">${product.name}</h5>
+                        <p class="card-text flex-grow-1">${product.description}</p>
+                        <div class="mt-auto">
+                            <p class="card-text mb-2">
+                                <strong class="fs-5">${formatPrice(product.price)}</strong>
+                                ${product.stock > 0 ? 
+                                    `<span class="badge bg-success ms-2">Stock: ${product.stock}</span>` : 
+                                    '<span class="badge bg-danger ms-2">Sin stock</span>'}
+                            </p>
+                            <button onclick="addToCart(${product.id})" 
+                                    class="btn btn-primary w-100" 
+                                    ${product.stock <= 0 ? 'disabled' : ''}>
+                                <i class="bi bi-cart-plus me-2"></i>
+                                Agregar al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <button onclick="removeFromCart(${item.id})" class="btn btn-sm btn-danger">
-                    <i class="bi bi-dash"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
-
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    cartTotalAmount.textContent = `$${total.toFixed(2)}`;
-    checkoutBtn.disabled = false;
-}
-
-// Quitar del carrito
-function removeFromCart(productId) {
-    const index = cart.findIndex(item => item.id === productId);
-    if (index !== -1) {
-        if (cart[index].quantity > 1) {
-            cart[index].quantity--;
-        } else {
-            cart.splice(index, 1);
-        }
-        sounds.cancel.play();
-        renderCart();
+        `).join('');
+        
+        console.log('HTML generado:', productsHTML.substring(0, 100) + '...');
+        container.innerHTML = productsHTML;
+        console.log('Renderizado completado');
+    } catch (error) {
+        console.error('Error al renderizar productos:', error);
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Error al mostrar los productos: ${error.message}
+                </div>
+            </div>`;
     }
 }
 
-// Checkout
-checkoutBtn.addEventListener('click', async () => {
-    try {
-        const response = await fetch('../../controlador/ventacontroller.php?action=create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ items: cart })
-        });
+// Cargar citas
+async function cargarCitas() {
+    console.log('Iniciando carga de citas...');
+    const citasTableBody = document.getElementById('citasTableBody');
+    
+    if (!citasTableBody) {
+        console.error('No se encontró el contenedor de citas');
+        return;
+    }
 
+    try {
+        citasTableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando citas...</p>
+                </td>
+            </tr>`;
+
+        const response = await fetch('../../controlador/citacontroller.php?action=listarPorUsuario');
+        console.log('Respuesta del servidor:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
-        if (data.success) {
-            sounds.success.play();
-            cart = [];
-            renderCart();
-            alert('¡Compra realizada con éxito!');
+        console.log('Datos de citas recibidos:', data);
+
+        if (data.success && data.citas && Array.isArray(data.citas)) {
+            if (data.citas.length > 0) {
+                citasTableBody.innerHTML = data.citas.map(cita => `
+                    <tr>
+                        <td>${cita.mascota_nombre || 'N/A'}</td>
+                        <td>${cita.servicio || 'N/A'}</td>
+                        <td>${formatearFecha(cita.fecha)}</td>
+                        <td>${cita.hora || 'N/A'}</td>
+                        <td>
+                            <span class="badge ${cita.estado === 'Pendiente' ? 'bg-primary' : 
+                                              cita.estado === 'Completada' ? 'bg-success' : 
+                                              'bg-secondary'}">
+                                ${cita.estado || 'Pendiente'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="cancelarCita(${cita.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                citasTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No hay citas programadas
+                        </td>
+                    </tr>`;
+            }
         } else {
-            alert(data.message || 'Error al procesar la compra');
+            throw new Error(data.message || 'Error al cargar las citas');
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al procesar la compra');
+        console.error('Error al cargar citas:', error);
+        citasTableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger py-4">
+                    <i class="bi bi-exclamation-triangle fs-2 d-block mb-2"></i>
+                    Error al cargar las citas: ${error.message}
+                </td>
+            </tr>`;
     }
-});
+}
 
-// Inicialización
-document.addEventListener('DOMContentLoaded', () => {
-    loadPets();
-    loadAppointments();
-    loadPetSelect();
-    renderProducts();
-    renderCart();
-
-    // Configurar fecha mínima en el input de fecha
-    const fechaInput = document.getElementById('fecha-input');
-    if (fechaInput) {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        fechaInput.min = now.toISOString().slice(0, 16);
-    }
-});
+// Función para formatear fecha
+function formatearFecha(fecha) {
+    return new Date(fecha).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}

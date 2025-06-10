@@ -9,9 +9,12 @@ class Producto extends Conexion {
     private $imagen;
     private $stock;
     private $categoria;
+    private $conn;
+    private $table = 'productos';
 
-    public function __construct() {
+    public function __construct($db) {
         parent::__construct();
+        $this->conn = $db;
     }
 
     public function obtenerTodos() {
@@ -28,61 +31,146 @@ class Producto extends Conexion {
         return $stmt->fetch();
     }
 
-    public function crear($datos) {
-        $query = "INSERT INTO productos (nombre, descripcion, precio, imagen, stock, categoria) 
-                 VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $this->conexion->prepare($query);
-        return $stmt->execute([
-            $datos['nombre'],
-            $datos['descripcion'],
-            $datos['precio'],
-            $datos['imagen'],
-            $datos['stock'],
-            $datos['categoria']
-        ]);
+    public function create($data) {
+        $query = "INSERT INTO " . $this->table . " 
+                (nombre, descripcion, precio, stock, categoria, imagen, activo) 
+                VALUES 
+                (:nombre, :descripcion, :precio, :stock, :categoria, :imagen, 1)";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+
+            // Sanitizar datos
+            $nombre = htmlspecialchars(strip_tags($data['nombre']));
+            $descripcion = htmlspecialchars(strip_tags($data['descripcion']));
+            $precio = floatval($data['precio']);
+            $stock = intval($data['stock']);
+            $categoria = htmlspecialchars(strip_tags($data['categoria']));
+            $imagen = isset($data['imagen']) ? htmlspecialchars(strip_tags($data['imagen'])) : '';
+
+            // Vincular valores
+            $stmt->bindParam(":nombre", $nombre);
+            $stmt->bindParam(":descripcion", $descripcion);
+            $stmt->bindParam(":precio", $precio);
+            $stmt->bindParam(":stock", $stock);
+            $stmt->bindParam(":categoria", $categoria);
+            $stmt->bindParam(":imagen", $imagen);
+
+            if($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch(PDOException $e) {
+            throw new Exception("Error al crear el producto: " . $e->getMessage());
+        }
     }
 
-    public function actualizar($datos) {
-        $query = "UPDATE productos SET 
-                 nombre = ?, 
-                 descripcion = ?, 
-                 precio = ?, 
-                 stock = ?, 
-                 categoria = ?";
-        
-        $params = [
-            $datos['nombre'],
-            $datos['descripcion'],
-            $datos['precio'],
-            $datos['stock'],
-            $datos['categoria']
-        ];
+    public function update($data) {
+        $setFields = [];
+        $params = [];
 
-        if (!empty($datos['imagen'])) {
-            $query .= ", imagen = ?";
-            $params[] = $datos['imagen'];
+        // Construir dinámicamente los campos a actualizar
+        foreach(['nombre', 'descripcion', 'precio', 'stock', 'categoria', 'imagen'] as $field) {
+            if(isset($data[$field]) && !empty($data[$field])) {
+                $setFields[] = "$field = :$field";
+                $params[$field] = htmlspecialchars(strip_tags($data[$field]));
+            }
         }
 
-        $query .= " WHERE id = ?";
-        $params[] = $datos['id'];
+        if(empty($setFields)) {
+            return false;
+        }
 
-        $stmt = $this->conexion->prepare($query);
-        return $stmt->execute($params);
+        $query = "UPDATE " . $this->table . " 
+                SET " . implode(", ", $setFields) . "
+                WHERE id = :id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            
+            // Vincular ID
+            $params['id'] = $data['id'];
+            
+            // Vincular todos los parámetros
+            foreach($params as $key => &$value) {
+                if($key === 'precio') {
+                    $value = floatval($value);
+                } elseif($key === 'stock') {
+                    $value = intval($value);
+                }
+                $stmt->bindParam(":$key", $value);
+            }
+
+            if($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch(PDOException $e) {
+            throw new Exception("Error al actualizar el producto: " . $e->getMessage());
+        }
     }
 
-    public function eliminar($id) {
-        $query = "UPDATE productos SET activo = 0 WHERE id = ?";
-        $stmt = $this->conexion->prepare($query);
-        return $stmt->execute([$id]);
+    public function getById($id) {
+        $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $id);
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            throw new Exception("Error al obtener el producto: " . $e->getMessage());
+        }
     }
 
-    public function buscar($termino) {
-        $query = "SELECT * FROM productos 
-                 WHERE activo = 1 
-                 AND (nombre LIKE ? OR descripcion LIKE ? OR categoria LIKE ?)";
-        $termino = "%$termino%";
-        $stmt = $this->conexion->prepare($query);
-        $stmt->execute([$termino, $termino, $termino]);
-        return $stmt->fetchAll();
+    public function getAll() {
+        $query = "SELECT * FROM " . $this->table . " WHERE activo = 1 ORDER BY id DESC";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            throw new Exception("Error al obtener los productos: " . $e->getMessage());
+        }
+    }
+
+    public function toggleStatus($id, $status) {
+        $query = "UPDATE " . $this->table . " 
+                SET activo = :status 
+                WHERE id = :id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":status", $status, PDO::PARAM_BOOL);
+            $stmt->bindParam(":id", $id);
+
+            if($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch(PDOException $e) {
+            throw new Exception("Error al cambiar el estado del producto: " . $e->getMessage());
+        }
+    }
+
+    public function search($term) {
+        $query = "SELECT * FROM " . $this->table . " 
+                WHERE nombre LIKE :term 
+                OR descripcion LIKE :term 
+                OR categoria LIKE :term";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $searchTerm = "%{$term}%";
+            $stmt->bindParam(":term", $searchTerm);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            throw new Exception("Error al buscar productos: " . $e->getMessage());
+        }
     }
 } 

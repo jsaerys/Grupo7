@@ -132,12 +132,12 @@ $base_path = '/proyectos/colaborativo/Grupo7/';
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="#">
                 <img src="recursos/logo.png" alt="Logo" style="height: 40px;">
                 <span class="ms-2">Guau</span>
-            </a>
+        </a>
             <div class="d-flex">
                 <a href="login.php" class="btn btn-outline-light me-2">
                     <i class="bi bi-person-fill me-1"></i>Iniciar Sesión
@@ -145,66 +145,66 @@ $base_path = '/proyectos/colaborativo/Grupo7/';
                 <a href="registro.php" class="btn btn-light">
                     <i class="bi bi-person-plus-fill me-1"></i>Registrarse
                 </a>
-            </div>
         </div>
-    </nav>
+    </div>
+  </nav>
 
-    <header class="hero">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h1 class="display-4 fw-bold mb-4">Bienvenido a <span class="text-warning">Guau</span></h1>
-                    <p class="lead mb-4">La tienda favorita de tu mejor amigo 🐶🐱</p>
+  <header class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h1 class="display-4 fw-bold mb-4">Bienvenido a <span class="text-warning">Guau</span></h1>
+          <p class="lead mb-4">La tienda favorita de tu mejor amigo 🐶🐱</p>
                     <a href="registro.php" class="btn btn-light btn-lg">
                         <i class="bi bi-paw-fill me-2"></i>Únete Ahora
                     </a>
-                </div>
-                <div class="col-md-6 text-center">
-                    <img src="https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=500&q=80" alt="Perro feliz" class="img-fluid rounded-circle shadow-lg">
-                </div>
-            </div>
         </div>
-    </header>
+        <div class="col-md-6 text-center">
+          <img src="https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=500&q=80" alt="Perro feliz" class="img-fluid rounded-circle shadow-lg">
+        </div>
+      </div>
+    </div>
+  </header>
 
     <section class="services">
-        <div class="container">
-            <h2 class="text-center mb-5">Nuestros Servicios</h2>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="service-card">
+      <div class="container">
+        <h2 class="text-center mb-5">Nuestros Servicios</h2>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="service-card">
                         <div class="service-icon">
-                            <i class="bi bi-heart-pulse"></i>
+              <i class="bi bi-heart-pulse"></i>
                         </div>
                         <h3 class="service-title">Atención Veterinaria</h3>
                         <p class="service-description">
                             Cuidado profesional para tu mascota con los mejores especialistas.
                         </p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="service-card">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="service-card">
                         <div class="service-icon">
-                            <i class="bi bi-scissors"></i>
+              <i class="bi bi-scissors"></i>
                         </div>
                         <h3 class="service-title">Peluquería</h3>
                         <p class="service-description">
                             Estética y limpieza para tu amigo peludo con los últimos tratamientos.
                         </p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="service-card">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="service-card">
                         <div class="service-icon">
-                            <i class="bi bi-shop"></i>
+              <i class="bi bi-shop"></i>
                         </div>
                         <h3 class="service-title">Tienda</h3>
                         <p class="service-description">
                             Todo lo que tu mascota necesita para una vida feliz y saludable.
                         </p>
-                    </div>
-                </div>
             </div>
+          </div>
         </div>
+      </div>
     </section>
 
     <section class="features">
@@ -243,9 +243,9 @@ $base_path = '/proyectos/colaborativo/Grupo7/';
                             Recibe tu pedido en la puerta de tu casa en tiempo récord.
                         </p>
                     </div>
-                </div>
-            </div>
         </div>
+        </div>
+      </div>
     </section>
 
     <footer class="footer">
@@ -280,8 +280,8 @@ $base_path = '/proyectos/colaborativo/Grupo7/';
             </div>
             <hr class="my-4">
             <p class="text-center mb-0">&copy; 2025 Guau. Todos los derechos reservados.</p>
-        </div>
-    </footer>
+    </div>
+  </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

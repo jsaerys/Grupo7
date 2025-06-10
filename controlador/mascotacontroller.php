@@ -14,8 +14,8 @@ if (!isset($_SESSION['user'])) {
     } else {
         $_SESSION['error'] = 'Por favor inicie sesión para continuar.';
         header('Location: /vista/login.php');
-        exit;
-    }
+    exit;
+}
 }
 
 require_once __DIR__ . '/../modelo/mascota.php';
@@ -98,6 +98,81 @@ switch ($action) {
                 'success' => false,
                 'message' => 'ID de mascota no proporcionado'
             ]);
+        }
+        break;
+
+    case 'get':
+        try {
+            $id = isset($_GET['id']) ? $_GET['id'] : null;
+            if (!$id) {
+                throw new Exception('ID de mascota no proporcionado');
+            }
+            
+            $stmt = $model->obtenerPorId($id);
+            $mascota = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($mascota) {
+                echo json_encode([
+                    'success' => true,
+                    'mascota' => $mascota
+                ]);
+            } else {
+                throw new Exception('Mascota no encontrada');
+            }
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        break;
+
+    case 'actualizar':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                if (empty($_POST['id']) || empty($_POST['nombre']) || empty($_POST['especie']) || empty($_POST['raza'])) {
+                    throw new Exception('Todos los campos son requeridos');
+                }
+
+                $model->actualizar(
+                    $_POST['id'],
+                    $_POST['nombre'],
+                    $_POST['especie'],
+                    $_POST['raza']
+                );
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Mascota actualizada exitosamente'
+                ]);
+            } catch (Exception $e) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+            }
+        }
+        break;
+
+    case 'listar':
+        try {
+            $stmt = $model->listarTodas();
+            $mascotas = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $mascotas[] = [
+                    'id' => $row['id'],
+                    'nombre' => $row['nombre'],
+                    'especie' => $row['especie'],
+                    'raza' => $row['raza'],
+                    'dueno' => $row['dueno']
+                ];
+            }
+            echo json_encode(['success' => true, 'mascotas' => $mascotas]);
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         break;
 

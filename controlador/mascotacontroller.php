@@ -135,6 +135,14 @@ switch ($action) {
                     throw new Exception('Todos los campos son requeridos');
                 }
 
+                // Obtener la mascota actual para mantener el usuario_id
+                $stmt = $model->obtenerPorId($_POST['id']);
+                $mascota = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$mascota) {
+                    throw new Exception('Mascota no encontrada');
+                }
+
                 $model->actualizar(
                     $_POST['id'],
                     $_POST['nombre'],

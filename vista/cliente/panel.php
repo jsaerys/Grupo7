@@ -237,6 +237,17 @@ $user = $_SESSION['user'];
                     <div class="text-end mt-3">
                         <h5>Total: <span id="carritoTotal">$0</span></h5>
                     </div>
+                    <div class="mt-3">
+                        <label for="metodoPago" class="form-label">Método de pago:</label>
+                        <select class="form-select" id="metodoPago" required>
+                            <option value="">Seleccionar método de pago</option>
+                            <option value="tarjeta">Tarjeta de crédito/débito</option>
+                            <option value="efectivo">Efectivo (pago al recibir)</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Por favor seleccione un método de pago
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -258,6 +269,60 @@ $user = $_SESSION['user'];
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Cargar citas cuando se cambia a la pestaña de citas
+        document.getElementById('citas-tab').addEventListener('shown.bs.tab', function() {
+            cargarCitas();
+        });
+        
+        // Cargar citas si estamos en la pestaña de citas al iniciar
+        if (document.querySelector('#citas-tab.active')) {
+            cargarCitas();
+        }
+        
+        // Cargar productos cuando se cambia a la pestaña de tienda
+        document.getElementById('tienda-tab').addEventListener('shown.bs.tab', function() {
+            cargarProductos();
+        });
+        
+        // Cargar productos si estamos en la pestaña de tienda al iniciar
+        if (document.querySelector('#tienda-tab.active')) {
+            cargarProductos();
+        }
+        
+        // Inicializar el contador del carrito
+        actualizarContadorCarrito();
+        
+        // Configurar el evento para abrir el modal del carrito
+        document.getElementById('carritoBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            mostrarCarrito();
+        });
+        
+        // Configurar el evento para el botón de vaciar carrito
+        document.getElementById('vaciarCarrito').addEventListener('click', function() {
+            vaciarCarrito();
+        });
+        
+        // Configurar el evento para el botón de procesar compra
+        document.getElementById('procesarCompra').addEventListener('click', function() {
+            // Validar que se haya seleccionado un método de pago
+            const metodoPago = document.getElementById('metodoPago').value;
+            if (!metodoPago) {
+                document.getElementById('metodoPago').classList.add('is-invalid');
+                return;
+            }
+            
+            // Llamar a la función procesarCompra() que ya existe en script.js
+            procesarCompra();
+        });
+        
+        // Quitar la clase is-invalid cuando se selecciona un método de pago
+        document.getElementById('metodoPago').addEventListener('change', function() {
+            if (this.value) {
+                this.classList.remove('is-invalid');
+            }
+        });
+        
         console.log('DOM cargado, iniciando aplicación...');
         
         // Inicializar los tabs de Bootstrap
@@ -276,9 +341,314 @@ $user = $_SESSION['user'];
             console.log('Tab de citas activado, recargando citas...');
             cargarCitas();
         });
+        
+        // Función para cargar las mascotas del usuario en el selector
+        function cargarMascotas() {
+            console.log('Cargando mascotas del usuario...');
+            const mascotaSelect = document.getElementById('mascota-select');
+            const userId = <?php echo $user['id']; ?>;
+            
+            // Limpiar opciones anteriores excepto la primera
+            while (mascotaSelect.options.length > 1) {
+                mascotaSelect.remove(1);
+            }
+            
+            // Obtener las mascotas del usuario usando una consulta directa a PHP
+            <?php 
+            require_once '../../modelo/mascota.php';
+            $mascotaModel = new Mascota();
+            $resultado = $mascotaModel->listarPorUsuario($user['id']);
+            $mascotasData = [];
+            while ($row = $resultado->fetch(PDO::FETCH_ASSOC)) {
+                $mascotasData[] = $row;
+            }
+            ?>
+            
+            // Usar los datos de mascotas obtenidos directamente de PHP
+            const mascotas = <?php echo json_encode($mascotasData); ?>;
+            
+            if (mascotas && mascotas.length > 0) {
+                // Si hay mascotas, agregarlas al selector
+                mascotas.forEach(mascota => {
+                    const option = document.createElement('option');
+                    option.value = mascota.id;
+                    option.textContent = mascota.nombre + ' (' + mascota.especie + ')';
+                    mascotaSelect.appendChild(option);
+                });
+                console.log('Mascotas cargadas:', mascotas.length);
+            } else {
+                // Si no hay mascotas, mostrar mensaje
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No tienes mascotas registradas';
+                option.disabled = true;
+                mascotaSelect.appendChild(option);
+                
+                // Mostrar alerta
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No tienes mascotas',
+                    text: 'Debes registrar al menos una mascota antes de agendar una cita',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        }
 
+        // Función para cargar las citas del usuario
+        function cargarCitas() {
+            console.log('Cargando citas del usuario...');
+            const citasTableBody = document.getElementById('citasTableBody');
+            if (!citasTableBody) {
+                console.error('No se encontró el contenedor de citas');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            citasTableBody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></td></tr>';
+            
+            // Obtener las citas del usuario
+            fetch('../../controlador/citacontroller.php?action=listarPorUsuario')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && Array.isArray(data.citas) && data.citas.length > 0) {
+                        // Limpiar el contenedor
+                        citasTableBody.innerHTML = '';
+                        
+                        // Agregar cada cita a la tabla
+                        data.citas.forEach(cita => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${cita.mascota_nombre}</td>
+                                <td>${formatServicio(cita.servicio)}</td>
+                                <td>${formatDate(cita.fecha)}</td>
+                                <td>${cita.hora}</td>
+                                <td><span class="badge bg-success">Confirmada</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick="cancelarCita(${cita.id})">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </button>
+                                </td>
+                            `;
+                            citasTableBody.appendChild(tr);
+                        });
+                    } else {
+                        // Mostrar mensaje si no hay citas
+                        citasTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        No tienes citas agendadas. Puedes agendar una nueva cita haciendo clic en el botón "Agendar Cita".
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar citas:', error);
+                    citasTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <div class="alert alert-danger mb-0">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    Error al cargar tus citas. Por favor, intenta de nuevo más tarde.
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        // Función para formatear la fecha
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('es-ES');
+        }
+        
+        // Función para formatear el servicio
+        function formatServicio(servicio) {
+            const servicios = {
+                'consulta': 'Consulta veterinaria',
+                'vacunacion': 'Vacunación',
+                'peluqueria': 'Peluquería',
+                'desparasitacion': 'Desparasitación'
+            };
+            return servicios[servicio] || servicio;
+        }
+        
+        // Función para cancelar una cita
+        function cancelarCita(id) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "No podrás revertir esta acción",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cancelar cita',
+                cancelButtonText: 'No, mantener cita'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('action', 'delete');
+                    formData.append('id', id);
+                    
+                    fetch('../../controlador/citacontroller.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire(
+                                '¡Cancelada!',
+                                'Tu cita ha sido cancelada.',
+                                'success'
+                            );
+                            cargarCitas(); // Recargar la lista de citas
+                        } else {
+                            throw new Error(data.message || 'Error al cancelar la cita');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire(
+                            'Error',
+                            error.message || 'No se pudo cancelar la cita',
+                            'error'
+                        );
+                    });
+                }
+            });
+        }
+        
+        // Función para cargar los productos en la tienda
+        function cargarProductos() {
+            console.log('Cargando productos...');
+            const productosContainer = document.getElementById('productosContainer');
+            if (!productosContainer) {
+                console.error('No se encontró el contenedor de productos');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            productosContainer.innerHTML = '<div class="col-12 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+            
+            // Obtener los productos
+            fetch('../../controlador/productocontroller.php?action=getAll')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && Array.isArray(data.productos) && data.productos.length > 0) {
+                        // Limpiar el contenedor
+                        productosContainer.innerHTML = '';
+                        
+                        // Agregar cada producto como una tarjeta
+                        data.productos.forEach(producto => {
+                            const card = document.createElement('div');
+                            card.className = 'col-md-4 col-lg-3';
+                            
+                            // Ruta de la imagen o imagen por defecto
+                            const imagenUrl = producto.imagen 
+                                ? `../../assets/productos/${producto.imagen}` 
+                                : '../../assets/img/producto-default.jpg';
+                            
+                            card.innerHTML = `
+                                <div class="card h-100 shadow-sm">
+                                    <img src="${imagenUrl}" class="card-img-top" alt="${producto.nombre}" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body d-flex flex-column">
+                                        <h5 class="card-title">${producto.nombre}</h5>
+                                        <p class="card-text text-muted small">${producto.categoria}</p>
+                                        <p class="card-text flex-grow-1">${producto.descripcion.substring(0, 100)}${producto.descripcion.length > 100 ? '...' : ''}</p>
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <h5 class="m-0 text-primary">$${parseFloat(producto.precio).toFixed(2)}</h5>
+                                            <button class="btn btn-primary" onclick="agregarAlCarrito(${producto.id}, '${producto.nombre}', ${producto.precio})">
+                                                <i class="bi bi-cart-plus"></i> Agregar
+                                            </button>
+                                        </div>
+                                        ${parseInt(producto.stock) <= 5 ? `<div class="mt-2 text-danger small"><i class="bi bi-exclamation-triangle"></i> Solo quedan ${producto.stock} unidades</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            productosContainer.appendChild(card);
+                        });
+                    } else {
+                        // Mostrar mensaje si no hay productos
+                        productosContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No hay productos disponibles en este momento.
+                                </div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar productos:', error);
+                    productosContainer.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Error al cargar los productos. Por favor, intenta de nuevo más tarde.
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+        
+        // Función para agregar un producto al carrito
+        function agregarAlCarrito(id, nombre, precio) {
+            // Obtener el carrito actual del localStorage o crear uno nuevo
+            let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            
+            // Verificar si el producto ya está en el carrito
+            const productoExistente = carrito.find(item => item.id === id);
+            
+            if (productoExistente) {
+                // Si ya existe, aumentar la cantidad
+                productoExistente.cantidad += 1;
+            } else {
+                // Si no existe, agregar al carrito
+                carrito.push({
+                    id: id,
+                    nombre: nombre,
+                    precio: precio,
+                    cantidad: 1
+                });
+            }
+            
+            // Guardar el carrito actualizado
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            
+            // Mostrar notificación
+            Swal.fire({
+                icon: 'success',
+                title: 'Agregado al carrito',
+                text: `${nombre} se ha agregado a tu carrito`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+            
+            // Actualizar contador del carrito
+            actualizarContadorCarrito();
+        }
+        
+        // Función para actualizar el contador del carrito
+        function actualizarContadorCarrito() {
+            const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            const cantidadTotal = carrito.reduce((total, item) => total + item.cantidad, 0);
+            
+            // Actualizar el contador en la interfaz
+            const contadorCarrito = document.getElementById('carritoCount');
+            if (contadorCarrito) {
+                contadorCarrito.textContent = cantidadTotal;
+                contadorCarrito.style.display = cantidadTotal > 0 ? 'inline-block' : 'none';
+            }
+        }
+        
         // Evento para cuando se abre el modal de citas
-        document.getElementById('nuevaCitaBtn').addEventListener('click', function() {
+        document.getElementById('citaModal').addEventListener('show.bs.modal', function() {
             cargarMascotas();
         });
 
@@ -350,5 +720,265 @@ $user = $_SESSION['user'];
     window.addEventListener('beforeunload', autoLogout);
     window.addEventListener('unload', autoLogout);
     </script>
+<!-- Modal del Carrito -->
+<div class="modal fade" id="carritoModal" tabindex="-1" aria-labelledby="carritoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="carritoModalLabel"><i class="bi bi-cart3 me-2"></i>Mi Carrito</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="carritoVacio" class="text-center py-5">
+                    <i class="bi bi-cart-x" style="font-size: 3rem;"></i>
+                    <p class="mt-3">Tu carrito está vacío</p>
+                    <button class="btn btn-outline-primary mt-2" data-bs-dismiss="modal" data-bs-toggle="tab" data-bs-target="#tienda-tab">Ir a la tienda</button>
+                </div>
+                <div id="carritoContenido" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Precio</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="carritoItems">
+                                <!-- Aquí se cargarán los items del carrito -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <div class="card border-0 bg-light p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total:</span>
+                                <span class="fw-bold" id="carritoTotal">$0.00</span>
+                            </div>
+                            <div class="mb-3">
+                                <label for="metodoPago" class="form-label">Método de pago:</label>
+                                <select class="form-select" id="metodoPago" required>
+                                    <option value="">Seleccionar método de pago</option>
+                                    <option value="tarjeta">Tarjeta de crédito/débito</option>
+                                    <option value="efectivo">Efectivo (pago al recibir)</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione un método de pago
+                                </div>
+                            </div>
+                            <button id="btnFinalizarCompra" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Finalizar compra</button>
+                            <button id="btnVaciarCarrito" class="btn btn-outline-danger mt-2"><i class="bi bi-trash me-2"></i>Vaciar carrito</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función para mostrar el carrito
+    function mostrarCarrito() {
+        const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        const carritoVacio = document.getElementById('carritoVacio');
+        const carritoContenido = document.getElementById('carritoContenido');
+        const carritoItems = document.getElementById('carritoItems');
+        const carritoTotal = document.getElementById('carritoTotal');
+        
+        // Mostrar u ocultar secciones según si hay items
+        if (carrito.length === 0) {
+            carritoVacio.classList.remove('d-none');
+            carritoContenido.classList.add('d-none');
+        } else {
+            carritoVacio.classList.add('d-none');
+            carritoContenido.classList.remove('d-none');
+            
+            // Limpiar contenido anterior
+            carritoItems.innerHTML = '';
+            
+            // Calcular total
+            let total = 0;
+            
+            // Agregar cada item al carrito
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.nombre}</td>
+                    <td>$${parseFloat(item.precio).toFixed(2)}</td>
+                    <td>
+                        <div class="input-group input-group-sm" style="width: 120px;">
+                            <button class="btn btn-outline-secondary" type="button" onclick="actualizarCantidad(${item.id}, ${item.cantidad - 1})">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                            <input type="text" class="form-control text-center" value="${item.cantidad}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="actualizarCantidad(${item.id}, ${item.cantidad + 1})">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>$${subtotal.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                carritoItems.appendChild(tr);
+            });
+            
+            // Actualizar total
+            carritoTotal.textContent = `$${total.toFixed(2)}`;
+        }
+        
+        // Mostrar el modal
+        const carritoModal = new bootstrap.Modal(document.getElementById('carritoModal'));
+        carritoModal.show();
+    }
+    
+    // Función para actualizar la cantidad de un producto en el carrito
+    function actualizarCantidad(id, nuevaCantidad) {
+        if (nuevaCantidad < 1) {
+            eliminarDelCarrito(id);
+            return;
+        }
+        
+        let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        const index = carrito.findIndex(item => item.id === id);
+        
+        if (index !== -1) {
+            carrito[index].cantidad = nuevaCantidad;
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            actualizarContadorCarrito();
+            mostrarCarrito(); // Actualizar la vista del carrito
+        }
+    }
+    
+    // Función para eliminar un producto del carrito
+    function eliminarDelCarrito(id) {
+        let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        carrito = carrito.filter(item => item.id !== id);
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+        actualizarContadorCarrito();
+        mostrarCarrito(); // Actualizar la vista del carrito
+    }
+    
+    // Configurar botón para vaciar el carrito
+    document.getElementById('btnVaciarCarrito').addEventListener('click', function() {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Se eliminarán todos los productos del carrito",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, vaciar carrito',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.removeItem('carrito');
+                actualizarContadorCarrito();
+                mostrarCarrito();
+                Swal.fire(
+                    '¡Carrito vacío!',
+                    'Tu carrito ha sido vaciado correctamente.',
+                    'success'
+                );
+            }
+        });
+    });
+    
+    // Configurar botón para finalizar compra
+    document.getElementById('btnFinalizarCompra').addEventListener('click', function() {
+        const metodoPago = document.getElementById('metodoPago').value;
+        const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        
+        // Validar que haya productos en el carrito
+        if (carrito.length === 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Carrito vacío',
+                text: 'Agrega productos al carrito antes de finalizar la compra'
+            });
+            return;
+        }
+        
+        // Validar que se haya seleccionado un método de pago
+        if (!metodoPago) {
+            document.getElementById('metodoPago').classList.add('is-invalid');
+            return;
+        }
+        
+        // Calcular el total
+        const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+        
+        // Preparar datos para enviar al servidor
+        const formData = new FormData();
+        formData.append('productos', JSON.stringify(carrito));
+        formData.append('total', total);
+        formData.append('metodo_pago', metodoPago);
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+            title: 'Procesando compra...',
+            text: 'Por favor espera un momento',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Enviar datos al servidor
+        fetch('../../controlador/ventacontroller.php?action=crear', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Si el servidor devuelve un error HTTP (400, 500, etc.)
+                if (response.status === 401) {
+                    throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+                } else {
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Compra realizada!',
+                    text: 'Tu pedido ha sido procesado correctamente.',
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    // Limpiar carrito y cerrar modal
+                    localStorage.removeItem('carrito');
+                    actualizarContadorCarrito();
+                    const carritoModal = bootstrap.Modal.getInstance(document.getElementById('carritoModal'));
+                    carritoModal.hide();
+                });
+            } else {
+                // Manejar errores específicos del servidor
+                let errorMsg = data.message || 'Error al procesar la compra';
+                throw new Error(errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la compra',
+                text: error.message || 'No se pudo procesar la compra. Por favor, intenta de nuevo más tarde.'
+            });
+        });
+    });
+</script>
 </body>
 </html>

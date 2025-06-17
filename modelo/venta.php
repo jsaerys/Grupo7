@@ -16,7 +16,7 @@ class Venta {
                     (usuario_id, productos, total, metodo_pago) 
                     VALUES (:usuario_id, :productos, :total, :metodo_pago)";
             
-        $stmt = $this->conn->prepare($query);
+            $stmt = $this->conn->prepare($query);
 
             // Sanitizar inputs
             $usuario_id = htmlspecialchars(strip_tags($venta['usuario_id']));
@@ -31,9 +31,9 @@ class Venta {
             $stmt->bindParam(":metodo_pago", $metodo_pago);
 
             if($stmt->execute()) {
-            return true;
-        }
-        return false;
+                return true;
+            }
+            return false;
         } catch(PDOException $e) {
             throw new Exception("Error al crear la venta: " . $e->getMessage());
         }

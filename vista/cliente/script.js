@@ -8,11 +8,10 @@ const sounds = {
 // Estado global
 let pets = [];
 let appointments = [];
-let cart = [];
 let products = [];
 
 // Variables globales para el carrito
-let carrito = [];
+let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
 let carritoModal = null;
 
 // Elementos DOM
@@ -530,9 +529,21 @@ async function procesarCompra() {
             return;
         }
 
+        // Obtener el método de pago seleccionado en el modal
+        const metodoPago = document.getElementById('metodoPago').value;
+        
+        // Validar que se haya seleccionado un método de pago
+        if (!metodoPago) {
+            document.getElementById('metodoPago').classList.add('is-invalid');
+            return;
+        }
+
         const result = await Swal.fire({
             title: '¿Procesar compra?',
-            text: `Total a pagar: $${calcularTotalCarrito().toLocaleString('es-CO')}`,
+            html: `
+                <p>Total a pagar: <strong>$${calcularTotalCarrito().toLocaleString('es-CO')}</strong></p>
+                <p>Método de pago: <strong>${metodoPago === 'tarjeta' ? 'Tarjeta de Crédito/Débito' : 'Efectivo'}</strong></p>
+            `,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, procesar',
@@ -540,16 +551,52 @@ async function procesarCompra() {
         });
 
         if (result.isConfirmed) {
-            // Aquí iría la lógica para procesar la compra
-            // Por ahora solo simulamos el proceso
+            // Mostrar cargando
             Swal.fire({
-                icon: 'success',
-                title: '¡Compra exitosa!',
-                text: 'Gracias por tu compra'
+                title: 'Procesando compra...',
+                text: 'Por favor espera un momento',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
             });
-            vaciarCarrito();
-            if (carritoModal) {
-                carritoModal.hide();
+
+            // Preparar datos para enviar al servidor
+            const productosJSON = JSON.stringify(carrito.map(item => ({
+                id: item.id,
+                nombre: item.nombre,
+                precio: item.precio,
+                cantidad: item.cantidad
+            })));
+
+            const total = calcularTotalCarrito();
+
+            // Enviar datos al servidor
+            const formData = new FormData();
+            formData.append('productos', productosJSON);
+            formData.append('total', total);
+            formData.append('metodo_pago', metodoPago);
+
+            const response = await fetch('../../controlador/ventacontroller.php?action=crear', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                sounds.success.play();
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Compra exitosa!',
+                    text: 'Gracias por tu compra'
+                });
+                vaciarCarrito();
+                if (carritoModal) {
+                    carritoModal.hide();
+                }
+            } else {
+                throw new Error(data.message || 'Error al procesar la compra');
             }
         }
     } catch (error) {
@@ -557,7 +604,7 @@ async function procesarCompra() {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'No se pudo procesar la compra'
+            text: `No se pudo procesar la compra: ${error.message}`
         });
     }
 }

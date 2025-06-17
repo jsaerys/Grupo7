@@ -424,4 +424,15 @@ document.getElementById('addPetModal').addEventListener('hidden.bs.modal', funct
     form.classList.remove('was-validated');
     form.reset();
 });
+
+// Inicializar los manejadores de eventos para los botones de eliminar existentes
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener todos los botones de eliminar mascota
+    const deleteButtons = document.querySelectorAll('.eliminar-mascota');
+    
+    // Agregar el manejador de eventos a cada botón
+    deleteButtons.forEach(button => {
+        addDeleteHandler(button);
+    });
+});
 </script>

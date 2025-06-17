@@ -257,9 +257,18 @@ async function editarMascota(id) {
             const { value: formValues } = await Swal.fire({
                 title: 'Editar Mascota',
                 html:
-                    `<input id="nombre" class="swal2-input" value="${data.mascota.nombre}" placeholder="Nombre">
-                     <input id="especie" class="swal2-input" value="${data.mascota.especie}" placeholder="Especie">
-                     <input id="raza" class="swal2-input" value="${data.mascota.raza}" placeholder="Raza">`,
+                    `<div class="form-group mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input id="nombre" class="form-control" value="${data.mascota.nombre}" placeholder="Nombre">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="especie" class="form-label">Especie</label>
+                        <input id="especie" class="form-control" value="${data.mascota.especie}" placeholder="Especie">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="raza" class="form-label">Raza</label>
+                        <input id="raza" class="form-control" value="${data.mascota.raza}" placeholder="Raza">
+                    </div>`,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Guardar',
@@ -555,7 +564,6 @@ async function cargarMascotas() {
                         <td>${mascota.nombre}</td>
                         <td>${mascota.especie}</td>
                         <td>${mascota.raza}</td>
-                        <td>${mascota.dueno}</td>
                         <td>
                             <button onclick="editarMascota(${mascota.id})" class="btn btn-sm btn-primary">
                                 <i class="bi bi-pencil"></i>

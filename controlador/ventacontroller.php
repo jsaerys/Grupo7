@@ -20,6 +20,12 @@ switch ($action) {
                     throw new Exception("Todos los campos son requeridos");
                 }
 
+                // Validar que el método de pago sea válido
+                $metodo_pago = $_POST['metodo_pago'];
+                if ($metodo_pago !== 'tarjeta' && $metodo_pago !== 'efectivo') {
+                    throw new Exception("Método de pago no válido");
+                }
+
                 // Validar que el carrito no esté vacío
                 $productos = json_decode($_POST['productos'], true);
                 if (empty($productos)) {

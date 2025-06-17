@@ -154,56 +154,90 @@ $conn = $conexion->getConexion();
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>Gestión de Ventas</h2>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Productos</th>
-                                <th>Total</th>
-                                <th>Fecha</th>
-                                <th>Estado</th>
-                                <th>Método de Pago</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $query = "SELECT v.id, u.nombre as cliente, v.productos, v.total, 
-                                      v.fecha, v.estado, v.metodo_pago 
-                                      FROM ventas v 
-                                      INNER JOIN usuarios u ON v.usuario_id = u.id 
-                                      ORDER BY v.fecha DESC";
-                            $stmt = $conn->prepare($query);
-                            $stmt->execute();
-                            while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
-                            ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($row['id']); ?></td>
-                                <td><?php echo htmlspecialchars($row['cliente']); ?></td>
-                                <td><?php echo htmlspecialchars($row['productos']); ?></td>
-                                <td>$<?php echo number_format($row['total'], 2); ?></td>
-                                <td><?php echo date('d/m/Y H:i', strtotime($row['fecha'])); ?></td>
-                                <td>
-                                    <span class="badge <?php echo $row['estado'] === 'completada' ? 'bg-success' : 
-                                        ($row['estado'] === 'pendiente' ? 'bg-warning' : 'bg-danger'); ?>">
-                                        <?php echo ucfirst($row['estado']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars($row['metodo_pago'] ?? '-'); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="<?php echo $row['id']; ?>">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Listado de Ventas</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" width="5%">ID</th>
+                                    <th width="10%">Cliente</th>
+                                    <th width="35%">Productos</th>
+                                    <th width="10%">Total</th>
+                                    <th width="15%">Fecha</th>
+                                    <th width="10%">Estado</th>
+                                    <th width="10%">Método de Pago</th>
+                                    <th class="text-center" width="5%">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $query = "SELECT v.id, u.nombre as cliente, v.productos, v.total, 
+                                           v.fecha, v.metodo_pago 
+                                           FROM ventas v 
+                                           INNER JOIN usuarios u ON v.usuario_id = u.id 
+                                           ORDER BY v.fecha DESC";
+                                $stmt = $conn->prepare($query);
+                                $stmt->execute();
+                                while($row = $stmt->fetch(PDO::FETCH_ASSOC)):
+                                    // Decodificar el JSON de productos
+                                    $productos = json_decode($row['productos'], true);
+                                ?>
+                                <tr>
+                                    <td class="text-center fw-bold"><?php echo htmlspecialchars($row['id']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['cliente']); ?></td>
+                                    <td>
+                                        <?php if (is_array($productos)): ?>
+                                            <div class="productos-lista">
+                                                <?php foreach ($productos as $producto): ?>
+                                                    <div class="producto-item mb-1">
+                                                        <span class="fw-medium"><?php echo htmlspecialchars($producto['nombre'] ?? 'Producto'); ?></span>
+                                                        <span class="text-muted ms-2">
+                                                            $<?php echo number_format($producto['precio'] ?? 0, 2); ?> x 
+                                                            <?php echo $producto['cantidad'] ?? 1; ?>
+                                                        </span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">Datos no disponibles</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="fw-bold text-success">$<?php echo number_format($row['total'], 2); ?></td>
+                                    <td><?php echo date('d/m/Y H:i', strtotime($row['fecha'])); ?></td>
+                                    <td>
+                                        <span class="badge bg-success">Completada</span>
+                                    </td>
+                                    <td>
+                                        <?php if ($row['metodo_pago'] == 'tarjeta'): ?>
+                                            <span class="badge bg-info text-dark">
+                                                <i class="bi bi-credit-card me-1"></i> Tarjeta
+                                            </span>
+                                        <?php elseif ($row['metodo_pago'] == 'efectivo'): ?>
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-cash me-1"></i> Efectivo
+                                            </span>
+                                        <?php else: ?>
+                                            <?php echo htmlspecialchars($row['metodo_pago'] ?? '-'); ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary edit-btn" data-id="<?php echo $row['id']; ?>" title="Editar venta">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </td>
+                                </tr>
                             <?php endwhile; ?>
                             <?php if ($stmt->rowCount() === 0): ?>
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                                    No hay ventas registradas
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <i class="bi bi-cart-x fs-1 text-muted mb-3"></i>
+                                        <h5 class="text-muted">No hay ventas registradas</h5>
+                                        <p class="text-muted small">Las ventas realizadas por los clientes aparecerán aquí</p>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endif; ?>

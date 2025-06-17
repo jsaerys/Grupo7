@@ -123,6 +123,61 @@ class UsuarioController {
         header('Location: ../vista/index.php');
         exit();
     }
+
+    public function listar() {
+        try {
+            $usuarios = $this->modelo->listarTodos();
+            echo json_encode([
+                'success' => true,
+                'usuarios' => $usuarios
+            ]);
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function obtener($id) {
+        try {
+            $usuario = $this->modelo->obtenerPorId($id);
+            if ($usuario) {
+                echo json_encode([
+                    'success' => true,
+                    'usuario' => $usuario
+                ]);
+            } else {
+                throw new Exception('Usuario no encontrado');
+            }
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function eliminar($id) {
+        try {
+            if ($this->modelo->eliminar($id)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Usuario eliminado exitosamente'
+                ]);
+            } else {
+                throw new Exception('Error al eliminar el usuario');
+            }
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }
 
 $controller = new UsuarioController();
@@ -147,14 +202,54 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
             ];
             $controller->registrar($datos);
             break;
-        // Puedes añadir más casos para otras acciones como actualizar, cambiarPassword, etc.
+        case 'listar':
+            $controller->listar();
+            break;
+        case 'get':
+            $id = $_GET['id'] ?? null;
+            if ($id) {
+                $controller->obtener($id);
+            } else {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de usuario no proporcionado'
+                ]);
+            }
+            break;
+        case 'actualizar':
+            $datos = [
+                'id' => $_POST['id'] ?? '',
+                'nombre' => $_POST['nombre'] ?? '',
+                'email' => $_POST['email'] ?? '',
+                'telefono' => $_POST['telefono'] ?? ''
+            ];
+            echo json_encode($controller->actualizar($datos));
+            break;
+        case 'eliminar':
+            $id = $_POST['id'] ?? null;
+            if ($id) {
+                $controller->eliminar($id);
+            } else {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de usuario no proporcionado'
+                ]);
+            }
+            break;
         default:
-            $_SESSION['error'] = 'Acción no válida.';
-            header('Location: ../vista/index.php'); // Redirigir a una página por defecto en caso de acción no válida
-            exit();
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Acción no válida'
+            ]);
+            break;
     }
 } else {
-    $_SESSION['error'] = 'No se especificó ninguna acción.';
-    header('Location: ../vista/index.php'); // Redirigir a una página por defecto si no hay acción
-    exit();
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => 'No se especificó ninguna acción'
+    ]);
 }
